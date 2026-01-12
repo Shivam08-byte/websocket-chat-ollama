@@ -67,12 +67,36 @@ async def serve_frontend():
     return HTMLResponse(content=html_content)
 
 
+
 @app.get("/agents/agent1")
 async def serve_agent1():
     """Serve Agent1 demo page"""
     with open("static/agent1.html", "r") as f:
         html_content = f.read()
     return HTMLResponse(content=html_content)
+
+@app.get("/agents/agent2")
+async def serve_agent2():
+    """Serve Agent2 demo page"""
+    with open("static/agent2.html", "r") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
+
+@app.get("/agents/agent3")
+async def serve_agent3():
+    """Serve Agent3 demo page"""
+    with open("static/agent3.html", "r") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
+
+@app.get("/agents/agent4")
+async def serve_agent4():
+    """Serve Agent4 demo page"""
+    with open("static/agent4.html", "r") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
+    
+
 
 
 @app.websocket("/ws")
