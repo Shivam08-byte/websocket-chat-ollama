@@ -18,6 +18,50 @@ This document provides a detailed flow of how a chat message travels through the
 
 ---
 
+## 📚 RAG (Retrieval-Augmented Generation)
+
+When RAG is enabled, the server retrieves relevant context from a local knowledge base and augments the prompt before querying the model.
+
+### How It Works
+
+```
+User Query
+    │
+    ├─▶ Embed query with Ollama (nomic-embed-text)
+    ├─▶ Vector search over local chunks (cosine similarity)
+    ├─▶ Build context block from top-k chunks
+    └─▶ Augment prompt → Send to Ollama /api/generate
+```
+
+### Key Pieces
+- Backend retrieval in `rag_store.py` using Ollama `/api/embeddings`.
+- Simple JSON-backed store (`rag_store.json`) with numpy cosine similarity.
+- Controlled via env vars: `RAG_ENABLED`, `RAG_TOP_K`, `RAG_MAX_CHARS`, `OLLAMA_EMBED_MODEL`.
+
+### RAG Endpoints
+- `GET /api/rag/stats` → `{ enabled, chunks, sources, embed_model }`
+- `POST /api/rag/ingest_text` → `{ text, source }` adds text to the store
+- `POST /api/rag/ingest_file` (multipart) → upload `.txt`/`.md` and index
+
+### Quick Start (RAG)
+1) Ensure services running and embedding model pulled:
+    - Ollama pulls chat model and `nomic-embed-text` automatically via docker-compose.
+2) Ingest knowledge:
+```
+curl -X POST http://localhost:8000/api/rag/ingest_text \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Python is a programming language...","source":"docs/python.txt"}'
+```
+3) Chat as usual: retrieved context will be used automatically in answers.
+
+### Env Defaults
+- `RAG_ENABLED=true`
+- `RAG_TOP_K=4`
+- `RAG_MAX_CHARS=2000`
+- `OLLAMA_EMBED_MODEL=nomic-embed-text`
+
+---
+
 ## 📊 Detailed Flow Breakdown
 
 ### Phase 1: Application Initialization
@@ -39,7 +83,7 @@ docker-compose up -d
 
 #### 1.2 Frontend Loading
 ```
-User opens http://localhost:8081
+User opens http://localhost:<FASTAPI_EXTERNAL_PORT> (e.g., 8081)
     │
     ├─▶ Browser requests index.html
     │   ├─ FastAPI serves static/index.html
@@ -63,7 +107,7 @@ User opens http://localhost:8081
 Location: static/script.js, function connect()
 
 1. Determine protocol: ws:// or wss://
-2. Construct WebSocket URL: ws://localhost:8081/ws
+2. Construct WebSocket URL: ws://localhost:<FASTAPI_EXTERNAL_PORT>/ws
 3. Create WebSocket instance: new WebSocket(wsUrl)
 4. Attach event handlers:
    - ws.onopen    → Update status to "Connected"

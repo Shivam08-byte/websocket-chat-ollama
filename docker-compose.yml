@@ -21,6 +21,7 @@ services:
         /bin/ollama serve &
         sleep 5
         ollama pull ${OLLAMA_MODEL:-gemma:2b}
+        ollama pull ${OLLAMA_EMBED_MODEL:-nomic-embed-text}
         wait
 
   fastapi:
@@ -35,10 +36,24 @@ services:
     environment:
       - OLLAMA_HOST=${OLLAMA_HOST:-http://ollama:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-gemma:2b}
+      - OLLAMA_EMBED_MODEL=${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+      - RAG_ENABLED=${RAG_ENABLED:-true}
+      - RAG_TOP_K=${RAG_TOP_K:-4}
+      - RAG_MAX_CHARS=${RAG_MAX_CHARS:-2000}
+      - RAG_STORE_PATH=${RAG_STORE_PATH:-/app/data/rag_store.json}
+      - RAG_SAVE_UPLOADS=${RAG_SAVE_UPLOADS:-true}
+      - RAG_UPLOAD_DIR=${RAG_UPLOAD_DIR:-/app/data/uploads}
       - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-120}
       - FASTAPI_HOST=${FASTAPI_HOST:-0.0.0.0}
       - FASTAPI_PORT=${FASTAPI_PORT:-8000}
+      - WATCHFILES_FORCE_POLLING=${WATCHFILES_FORCE_POLLING:-true}
     restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+      - ./app.py:/app/app.py
+      - ./rag_store.py:/app/rag_store.py
+      - ./static:/app/static
+    command: uvicorn app:app --host ${FASTAPI_HOST:-0.0.0.0} --port ${FASTAPI_PORT:-8000} --reload
 
 volumes:
   ollama_data:
