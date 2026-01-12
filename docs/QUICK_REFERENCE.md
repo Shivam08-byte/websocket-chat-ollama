@@ -1,23 +1,32 @@
-# 🚀 Quick Reference - WebSocket Chat
+# 🚀 Quick Reference - WebSocket Chat (Modular Architecture)
 
 ## Access
 ```
-http://localhost:8081
+Frontend: http://localhost:8081
+API Docs: http://localhost:8081/docs
 ```
 
 ## Start/Stop
 ```bash
+# Navigate to builds directory
+cd builds/
+
 # Start
-docker-compose up -d
+docker compose up -d
 
 # Stop
-docker-compose down
+docker compose down
 
 # Restart
-docker-compose restart
+docker compose restart
+
+# Rebuild after code changes
+docker compose build fastapi
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
+docker compose logs --tail=50 fastapi
 ```
 
 ## Verify System
@@ -30,8 +39,20 @@ docker-compose logs -f
 # Check containers
 docker ps
 
-# Check health
+# Health check
 curl http://localhost:8081/health
+
+# Check all endpoints (19 total)
+curl http://localhost:8081/openapi.json
+
+# Unified RAG stats (both systems)
+curl http://localhost:8081/api/rag/stats
+
+# Manual RAG stats only
+curl http://localhost:8081/api/rag/manual/stats
+
+# LangChain RAG stats only
+curl http://localhost:8081/api/rag/langchain/stats
 
 # Check models
 curl http://localhost:8081/api/models
@@ -45,6 +66,9 @@ docker exec ollama ollama pull gemma:2b
 # View specific logs
 docker logs fastapi_websocket
 docker logs ollama
+
+# Check file sizes (modular architecture)
+find . -name "*.py" | grep -v __pycache__ | xargs wc -l
 ```
 
 ## Configuration

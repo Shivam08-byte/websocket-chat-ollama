@@ -1,440 +1,328 @@
-# WebSocket Chat with Ollama LLM
+# 🚀 WebSocket Chat with Ollama - Modular Architecture
 
-A Proof of Concept (POC) demonstrating real-time chat with an AI using WebSockets, FastAPI, and Ollama.
+A production-ready, modular chat application with dual RAG (Retrieval-Augmented Generation) systems, real-time WebSocket communication, and multiple LLM support.
 
-> **📖 New to this project? Start with [SETUP.md](SETUP.md) for detailed setup instructions for any device!**
+## ✨ Key Features
 
-## Features
+- 🏗️ **Modular Architecture**: Scalable sub-app design with clear separation of concerns
+- 🔄 **Dual RAG Systems**: Compare Manual vs LangChain implementations side-by-side
+- 🤖 **Multiple AI Models**: Gemma 2B, Phi-3, Llama 3.2, Qwen 2.5
+- 📁 **Document Upload**: PDF, DOCX, TXT, Markdown support
+- 🔌 **Single Port**: All 19 endpoints accessible through one port (8081)
+- 🐳 **Fully Dockerized**: Complete containerized setup with Docker Compose
+- ⚡ **Real-time Communication**: WebSocket-based chat for instant messaging
+- 📊 **OpenAPI Documentation**: Auto-generated API docs at `/docs`
+- 🎨 **Modern UI**: Clean, responsive chat interface with system toggle
 
-- 🚀 **Real-time Communication**: WebSocket-based chat for instant messaging
-- 🤖 **AI Integration**: Powered by Ollama with multiple LLM models
-- 🔄 **Model Selection**: Switch between different AI models on-the-fly
-- 🐳 **Dockerized**: Complete containerized setup with Docker Compose
-- 🎨 **Modern UI**: Clean and responsive chat interface
-- ⚡ **FastAPI Backend**: High-performance Python web framework
+## 🏗️ Architecture
 
-## Project Structure
+### Modular Structure
+```
+app.py (Main Server/Orchestrator)
+├── common/          → Shared APIs (health, models, system switching)
+├── app_manual/      → Manual RAG implementation
+├── app_langchain/   → LangChain RAG implementation
+└── static/          → Frontend (HTML/JS/CSS)
+```
+
+### Benefits
+- ✅ **Scalable**: Easy to add new modules (ChromaDB, LlamaIndex, etc.)
+- ✅ **Testable**: Each module can be tested independently
+- ✅ **Maintainable**: Clear code organization and separation
+- ✅ **Discoverable**: All endpoints auto-documented
+- ✅ **Backward Compatible**: Legacy endpoints preserved
+
+## 📦 Project Structure
 
 ```
 websockets/
-├── app.py                 # FastAPI application with WebSocket endpoint
-├── requirements.txt       # Python dependencies
-├── Dockerfile            # Container for FastAPI app
-├── docker-compose.yml    # Orchestrates Ollama and FastAPI services
-├── .env                  # Environment configuration (create from .env.example)
-├── .env.example          # Example environment configuration
-├── static/
-│   ├── index.html       # Chat interface
-│   ├── style.css        # Styling
-│   └── script.js        # WebSocket client logic
-└── README.md
+├── app.py                           # Main orchestrator server
+├── app_old_backup.py                # Backup of previous monolithic version
+├── requirements.txt                 # Python dependencies
+├── task                             # Task/project notes
+├── MODULAR_QUICK_REF.md            # Quick reference guide
+│
+├── common/                          # Shared APIs module
+│   ├── __init__.py
+│   └── app.py                       # Health, models, system switching
+│
+├── app_manual/                      # Manual RAG module
+│   ├── __init__.py
+│   ├── app.py                       # Manual RAG router
+│   └── rag_store.py                 # Custom RAG implementation
+│
+├── app_langchain/                   # LangChain RAG module
+│   ├── __init__.py
+│   ├── app.py                       # LangChain RAG router
+│   └── langchain_rag.py             # LangChain implementation
+│
+├── builds/                          # Docker configuration
+│   ├── Dockerfile                   # FastAPI container
+│   ├── docker-compose.yml           # Multi-container orchestration
+│   ├── pull-model.sh               # Script to pull Ollama models
+│   ├── pull-all-models.sh          # Pull all supported models
+│   └── verify.sh                   # Verify setup
+│
+├── data/                            # Data directory (gitignored)
+│   ├── rag_store.json              # Manual RAG storage
+│   ├── uploads/                    # Uploaded files
+│   └── vectorstore/                # LangChain FAISS vectors
+│
+├── docs/                            # Documentation
+│   ├── README.md                   # Project overview
+│   ├── SETUP.md                    # Detailed setup guide
+│   ├── MODULAR_ARCHITECTURE.md     # Architecture deep dive
+│   ├── CHAT_FLOW.md                # Communication flow
+│   ├── DUAL_SYSTEM_GUIDE.md        # Dual RAG comparison
+│   ├── MODEL_SELECTION.md          # Model information
+│   ├── QUICK_REFERENCE.md          # Quick commands
+│   ├── PROJECT_SUMMARY.md          # Project summary
+│   ├── future_scope.md             # Future enhancements
+│   └── understand_rag_without_code.md  # RAG explanation
+│
+└── static/                          # Frontend assets
+    ├── index.html                  # Chat interface
+    ├── script.js                   # WebSocket client
+    ├── style.css                   # Styling
+    └── test.html                   # Test page
 ```
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Docker and Docker Compose installed on your system
-- At least 4GB of free RAM (for Ollama and Llama2 model)
+### Prerequisites
+- Docker and Docker Compose
+- 4GB+ free RAM
 - Internet connection for initial setup
 
-## Quick Start
-
-### 1. Clone or navigate to the project directory
-
+### 1. Navigate to project
 ```bash
 cd /Users/shivam/Desktop/workspace/poc/websockets
 ```
 
-### 2. Configure environment variables
-
-Copy the example environment file:
-
+### 2. Start services
 ```bash
-cp .env.example .env
+cd builds/
+docker compose up -d
 ```
 
-Edit `.env` to customize your configuration:
-
+### 3. Wait for models to load
 ```bash
-# Application Configuration
-FASTAPI_HOST=0.0.0.0
-FASTAPI_PORT=8000
+# Check logs
+docker compose logs -f
 
-# Ollama Configuration
-OLLAMA_HOST=http://ollama:11434
-OLLAMA_MODEL=llama2              # Change to mistral, codellama, etc.
-OLLAMA_TIMEOUT=120
-
-# Docker Ports
-FASTAPI_EXTERNAL_PORT=8000
-OLLAMA_EXTERNAL_PORT=11434
+# Verify models loaded
+docker exec ollama ollama list
 ```
 
-### 3. Start the services
+### 4. Access application
+- **Frontend**: http://localhost:8081
+- **API Docs**: http://localhost:8081/docs
+- **Health Check**: http://localhost:8081/health
 
+## 📡 API Endpoints (19 Total)
+
+### Common Endpoints
+```
+GET  /health                     - Health check
+GET  /api/models                 - List available models
+POST /api/models/load            - Load specific model
+POST /api/system/switch          - Switch between systems
+GET  /api/system/current         - Get current system
+```
+
+### Manual RAG Module
+```
+GET  /api/rag/manual/stats       - Manual RAG stats
+POST /api/rag/manual/ingest_text - Ingest text
+POST /api/rag/manual/ingest_file - Ingest file
+POST /api/rag/manual/preview     - Preview context
+```
+
+### LangChain RAG Module
+```
+GET  /api/rag/langchain/stats    - LangChain stats
+POST /api/rag/langchain/ingest_text - Ingest text
+POST /api/rag/langchain/ingest_file - Ingest file
+POST /api/rag/langchain/query    - Direct query
+```
+
+### Unified Endpoints
+```
+GET  /                           - Main HTML page
+WS   /ws                         - WebSocket chat
+GET  /api/rag/stats              - Aggregated stats
+POST /api/rag/ingest_file        - Upload to both systems
+POST /api/rag/ingest_text        - Ingest to both systems
+POST /api/rag/preview            - Preview context
+```
+
+## 🧪 Testing
+
+### List all endpoints
 ```bash
-docker-compose up --build
+curl -s http://localhost:8081/openapi.json | \
+  python3 -c "import sys, json; \
+  data = json.load(sys.stdin); \
+  print('\\n'.join([f'{method.upper()} {path}' \
+  for path, methods in data['paths'].items() \
+  for method in methods.keys()]))"
 ```
 
-This will:
-- Pull the Ollama Docker image
-- Download the model specified in `.env` (default: Llama2, ~4GB)
-- Build the FastAPI application
-- Start both services
-
-**Note**: First startup will take several minutes to download the model.
-
-### 4. Access the chat interface
-
-Open your browser and go to:
-```
-http://localhost:8000
-```
-
-## Available AI Models
-
-The application comes pre-configured with multiple AI models:
-
-| Model | Size | Best For |
-|-------|------|----------|
-| **Gemma 2B** (default) | 1.7 GB | General conversations, good balance |
-| **Phi-3 Mini** | 2.3 GB | Reasoning, technical questions |
-| **Llama 3.2 1B** | 1.3 GB | Fast responses, lightweight |
-| **Qwen 2.5 1.5B** | 934 MB | Multilingual support |
-
-### Switching Models
-
-1. Use the dropdown in the top-right corner of the chat interface
-2. Select your desired model
-3. Wait for it to load (first time only, ~30s-2min depending on model)
-4. Start chatting once you see "loaded successfully"
-
-### Pre-loading All Models (Optional)
-
-To download all models at once:
-
+### Test health
 ```bash
-./pull-all-models.sh
+curl http://localhost:8081/health | python3 -m json.tool
 ```
 
-This downloads all 4 models (~6-8 GB total). Models are cached and load instantly after first download.
-
-## Architecture
-
-### System Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           User's Browser                                 │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │                    Chat UI (http://localhost:8081)                │  │
-│  │  ┌─────────────┐  ┌──────────────┐  ┌────────────────────────┐  │  │
-│  │  │   Header    │  │    Model     │  │  Connection Status     │  │  │
-│  │  │   & Title   │  │   Selector   │  │      Indicator         │  │  │
-│  │  └─────────────┘  └──────────────┘  └────────────────────────┘  │  │
-│  │  ┌───────────────────────────────────────────────────────────┐  │  │
-│  │  │                                                             │  │  │
-│  │  │              Chat Messages Area                            │  │  │
-│  │  │   [User Message]                                           │  │  │
-│  │  │              [AI Response]                                 │  │  │
-│  │  │   [User Message]                                           │  │  │
-│  │  │              [AI Response]                                 │  │  │
-│  │  │                                                             │  │  │
-│  │  └───────────────────────────────────────────────────────────┘  │  │
-│  │  ┌──────────────────────────────┐  ┌──────────────┐            │  │
-│  │  │  Message Input Field         │  │ Send Button  │            │  │
-│  │  └──────────────────────────────┘  └──────────────┘            │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                                  ▲                                       │
-│                                  │ HTML/CSS/JS                           │
-│                                  │ (static/)                             │
-└──────────────────────────────────┼───────────────────────────────────────┘
-                                   │
-                        WebSocket Connection (WSS/WS)
-                                   │
-┌──────────────────────────────────▼───────────────────────────────────────┐
-│                     Docker Container: fastapi_websocket                  │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │                   FastAPI Application (app.py)                    │  │
-│  │                                                                   │  │
-│  │  ┌─────────────────┐  ┌──────────────────┐  ┌────────────────┐  │  │
-│  │  │   WebSocket     │  │   REST API       │  │   Static File  │  │  │
-│  │  │   Endpoint      │  │   Endpoints      │  │   Serving      │  │  │
-│  │  │   /ws           │  │   /health        │  │   /            │  │  │
-│  │  │                 │  │   /api/models    │  │                │  │  │
-│  │  │  • Accept conn  │  │   /api/models/   │  │                │  │  │
-│  │  │  • Send/Receive │  │     load         │  │                │  │  │
-│  │  │  • Manage state │  │                  │  │                │  │  │
-│  │  └─────────────────┘  └──────────────────┘  └────────────────┘  │  │
-│  │                                                                   │  │
-│  │  ┌───────────────────────────────────────────────────────────┐  │  │
-│  │  │            Connection Manager                             │  │  │
-│  │  │  • Track active WebSocket connections                     │  │  │
-│  │  │  • Broadcast messages                                     │  │  │
-│  │  │  • Handle disconnections                                  │  │  │
-│  │  └───────────────────────────────────────────────────────────┘  │  │
-│  │                              │                                    │  │
-│  │                              │ HTTP POST                          │  │
-│  │                              ▼                                    │  │
-│  │  ┌───────────────────────────────────────────────────────────┐  │  │
-│  │  │          Ollama Query Handler                             │  │  │
-│  │  │  • Format prompts with system context                     │  │  │
-│  │  │  • Configure parameters (temp, top_p, top_k)              │  │  │
-│  │  │  • Send to Ollama API                                     │  │  │
-│  │  │  • Process responses                                      │  │  │
-│  │  └───────────────────────────────────────────────────────────┘  │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                    Port: 8081 (external) → 8000 (internal)              │
-└──────────────────────────────────┼───────────────────────────────────────┘
-                                   │
-                            HTTP REST API
-                    (http://ollama:11434/api/generate)
-                                   │
-┌──────────────────────────────────▼───────────────────────────────────────┐
-│                       Docker Container: ollama                           │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │                      Ollama Service                               │  │
-│  │                                                                   │  │
-│  │  ┌─────────────────────────────────────────────────────────────┐ │  │
-│  │  │                   REST API Server                           │ │  │
-│  │  │   • /api/generate  - Generate text from prompt              │ │  │
-│  │  │   • /api/pull      - Download models                        │ │  │
-│  │  │   • /api/list      - List available models                  │ │  │
-│  │  └─────────────────────────────────────────────────────────────┘ │  │
-│  │                              │                                    │  │
-│  │                              ▼                                    │  │
-│  │  ┌─────────────────────────────────────────────────────────────┐ │  │
-│  │  │                   Model Manager                             │ │  │
-│  │  │   • Load models into memory                                 │ │  │
-│  │  │   • Manage model lifecycle                                  │ │  │
-│  │  │   • Handle concurrent requests                              │ │  │
-│  │  └─────────────────────────────────────────────────────────────┘ │  │
-│  │                              │                                    │  │
-│  │                              ▼                                    │  │
-│  │  ┌─────────────────────────────────────────────────────────────┐ │  │
-│  │  │               AI Models (LLM Inference)                     │ │  │
-│  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │ │  │
-│  │  │  │ Gemma 2B │  │  Phi-3   │  │ Llama    │  │  Qwen    │   │ │  │
-│  │  │  │ 1.7 GB   │  │  2.3 GB  │  │ 3.2 1B   │  │ 2.5 1.5B │   │ │  │
-│  │  │  │          │  │          │  │  1.3 GB  │  │  934 MB  │   │ │  │
-│  │  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │ │  │
-│  │  └─────────────────────────────────────────────────────────────┘ │  │
-│  │                                                                   │  │
-│  │  Memory Allocation: 8GB limit, 6GB reserved                      │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                         Port: 11434                                      │
-│                Volume: ollama_data (persistent model storage)            │
-└──────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────────┐
-│                    Docker Network: websockets_default                    │
-│             (Internal communication between containers)                  │
-└──────────────────────────────────────────────────────────────────────────┘
-```
-
-### Component Breakdown
-
-**1. Frontend (User Interface)**
-- HTML/CSS/JavaScript single-page application
-- WebSocket client for real-time communication
-- Model selection dropdown
-- Message display with typing indicators
-- Connection status monitoring
-
-**2. FastAPI Backend**
-- WebSocket endpoint (`/ws`) for real-time chat
-- REST API for model management
-- Connection manager for multiple clients
-- Request/response formatting
-- Error handling and validation
-
-**3. Ollama Engine**
-- LLM model hosting and inference
-- REST API for text generation
-- Model management (pull, list, run)
-- Memory-efficient model loading
-- Concurrent request handling
-
-### Data Flow
-
-```
-┌─────────┐                      ┌──────────┐                    ┌─────────┐
-│ Browser │──── WebSocket ────▶│  FastAPI │──── HTTP POST ────▶│ Ollama  │
-│         │                      │          │                    │         │
-│  User   │◀─── WebSocket ─────│  Server  │◀─── Response ──────│  LLM    │
-│   UI    │     (real-time)     │          │     (JSON)         │ Engine  │
-└─────────┘                      └──────────┘                    └─────────┘
-     │                                │                               │
-     │                                │                               │
-  Static                         app.py                          Models
-  Files                         Python                          (AI)
-```
-
-### Message Flow Sequence
-
-1. **User Input** → User types message and clicks Send
-2. **WebSocket Send** → Message sent to FastAPI via WebSocket
-3. **Prompt Formatting** → FastAPI formats prompt with system context
-4. **HTTP Request** → FastAPI sends POST to Ollama API
-5. **Model Inference** → Ollama processes prompt with selected LLM
-6. **Response Generation** → AI generates response text
-7. **JSON Response** → Ollama returns JSON to FastAPI
-8. **WebSocket Send** → FastAPI forwards response via WebSocket
-9. **UI Update** → Browser displays AI response in chat
-
-### Technology Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend** | HTML5, CSS3, Vanilla JS | User interface |
-| **Communication** | WebSockets | Real-time bidirectional messaging |
-| **Backend Framework** | FastAPI (Python) | API server & WebSocket handler |
-| **AI Engine** | Ollama | LLM hosting and inference |
-| **Models** | Gemma, Phi-3, Llama, Qwen | Language models |
-| **Containerization** | Docker + Docker Compose | Deployment & orchestration |
-| **Networking** | Docker Network | Container communication |
-| **Storage** | Docker Volumes | Persistent model storage |
-
-## Configuration
-
-### Environment Variables
-
-All configuration is done through the `.env` file:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `FASTAPI_HOST` | FastAPI server host | `0.0.0.0` |
-| `FASTAPI_PORT` | FastAPI server port (internal) | `8000` |
-| `FASTAPI_EXTERNAL_PORT` | FastAPI external port | `8000` |
-| `OLLAMA_HOST` | Ollama API URL | `http://ollama:11434` |
-| `OLLAMA_MODEL` | LLM model to use | `llama2` |
-| `OLLAMA_TIMEOUT` | Request timeout in seconds | `120` |
-| `OLLAMA_EXTERNAL_PORT` | Ollama external port | `11434` |
-
-### Change the AI Model
-
-Simply update the `OLLAMA_MODEL` variable in your `.env` file:
-
+### Test stats
 ```bash
-OLLAMA_MODEL=mistral
+# Unified stats (both systems)
+curl http://localhost:8081/api/rag/stats | python3 -m json.tool
+
+# Manual system only
+curl http://localhost:8081/api/rag/manual/stats | python3 -m json.tool
+
+# LangChain system only
+curl http://localhost:8081/api/rag/langchain/stats | python3 -m json.tool
 ```
 
-Then restart the services:
+## 🔧 Development
 
+### Rebuild after changes
 ```bash
-docker-compose down
-docker-compose up --build
+cd builds/
+docker compose build fastapi
+docker compose up -d
 ```
 
-Available models: `llama2`, `mistral`, `codellama`, `phi`, etc.
-See [Ollama library](https://ollama.ai/library) for more models.
-
-### Adjust Ports
-
-Update port numbers in your `.env` file:
-
+### View logs
 ```bash
-FASTAPI_EXTERNAL_PORT=3000  # Access app on port 3000
-OLLAMA_EXTERNAL_PORT=11435  # Ollama on port 11435
+cd builds/
+docker compose logs -f fastapi      # Follow logs
+docker compose logs --tail=50       # Last 50 lines
 ```
 
-## API Endpoints
-
-- `GET /` - Serves the chat interface
-- `WebSocket /ws` - WebSocket endpoint for real-time chat
-- `GET /health` - Health check endpoint
-- `GET /api/models` - List available AI models
-- `POST /api/models/load` - Load/switch to a different model
-
-## Troubleshooting
-
-### Ollama not responding
-
+### Stop services
 ```bash
-# Check if Ollama is running
-docker ps
-
-# View Ollama logs
-docker logs ollama
-
-# Restart services
-docker-compose restart
+cd builds/
+docker compose down
 ```
 
-### Model not downloaded
+## 📚 Documentation
 
+| Document | Description |
+|----------|-------------|
+| [MODULAR_ARCHITECTURE.md](docs/MODULAR_ARCHITECTURE.md) | Deep dive into modular design |
+| [MODULAR_QUICK_REF.md](MODULAR_QUICK_REF.md) | Quick reference card |
+| [SETUP.md](docs/SETUP.md) | Detailed setup instructions |
+| [CHAT_FLOW.md](docs/CHAT_FLOW.md) | WebSocket communication flow |
+| [DUAL_SYSTEM_GUIDE.md](docs/DUAL_SYSTEM_GUIDE.md) | Manual vs LangChain comparison |
+| [MODEL_SELECTION.md](docs/MODEL_SELECTION.md) | Model information and selection |
+| [future_scope.md](docs/future_scope.md) | Planned features and enhancements |
+
+## 🎯 Adding a New Module
+
+Example: Adding ChromaDB support
+
+1. **Create module directory:**
 ```bash
-# Manually pull the model
-docker exec -it ollama ollama pull llama2
+mkdir app_chromadb
+touch app_chromadb/__init__.py
+touch app_chromadb/app.py
 ```
 
-### Port already in use
+2. **Create router:**
+```python
+# app_chromadb/app.py
+from fastapi import APIRouter
 
+router = APIRouter(prefix="/api/rag/chromadb", tags=["chroma-rag"])
+
+@router.get("/stats")
+async def chromadb_stats():
+    return {"system": "chromadb", "status": "active"}
+```
+
+3. **Register in main app:**
+```python
+# app.py
+from app_chromadb.app import router as chromadb_router
+app.include_router(chromadb_router)
+```
+
+4. **Update Dockerfile:**
+```dockerfile
+COPY ../app_chromadb/ ./app_chromadb/
+```
+
+5. **Rebuild:**
 ```bash
-# Check what's using port 8000
-lsof -i :8000
-
-# Or change the port in docker-compose.yml
+cd builds/
+docker compose build fastapi && docker compose up -d
 ```
 
-## Development
-
-### Run locally without Docker
-
-1. Install Ollama locally: https://ollama.ai/download
-
-2. Create a `.env` file with local configuration:
+6. **Test:**
 ```bash
-OLLAMA_HOST=http://localhost:11434
-OLLAMA_MODEL=llama2
-OLLAMA_TIMEOUT=120
-FASTAPI_HOST=0.0.0.0
-FASTAPI_PORT=8000
+curl http://localhost:8081/api/rag/chromadb/stats
 ```
 
-3. Pull the model:
-```bash
-ollama pull llama2
-```
+**New endpoint automatically available at `/docs`!**
 
-4. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
+## 🔬 Technology Stack
 
-5. Run the FastAPI server:
-```bash
-uvicorn app:app --reload
-```
+- **Backend**: FastAPI 0.109.0, Uvicorn
+- **AI**: Ollama (Gemma 2B, Phi-3, Llama 3.2, Qwen 2.5)
+- **Embeddings**: nomic-embed-text
+- **RAG (Manual)**: NumPy, custom cosine similarity
+- **RAG (LangChain)**: LangChain, FAISS, RecursiveCharacterTextSplitter
+- **File Parsing**: pypdf (PDF), python-docx (DOCX)
+- **Containerization**: Docker, Docker Compose
+- **Frontend**: Vanilla JavaScript, WebSocket API
 
-6. Access at `http://localhost:8000`
+## 📊 Current Status
 
-## Technologies Used
+- ✅ Modular architecture implemented
+- ✅ 19 endpoints registered
+- ✅ All modules operational
+- ✅ Both RAG systems working
+- ✅ WebSocket communication active
+- ✅ OpenAPI documentation available
+- ✅ Production ready
 
-- **FastAPI**: Modern Python web framework
-- **WebSockets**: Real-time bidirectional communication
-- **Ollama**: Local LLM runtime
-- **Llama2**: Meta's open-source language model
-- **Docker**: Containerization
-- **Vanilla JavaScript**: No frontend frameworks needed
+## 🚀 Future Enhancements
 
-## License
+See [future_scope.md](docs/future_scope.md) for detailed roadmap:
 
-This is a POC/educational project. Feel free to use and modify as needed.
+1. **AI Agents** - Function calling, tool integration
+2. **Memory System** - Conversation history, session management
+3. **Advanced RAG** - Hybrid search, reranking, citations
+4. **Streaming** - Server-sent events for token streaming
+5. **Multi-Agent** - Coordinated agent systems
 
-## Next Steps
+## 🤝 Contributing
 
-Potential enhancements:
-- Add conversation history
-- Support multiple concurrent users
-- Implement streaming responses
-- Add user authentication
-- Store chat history in database
-- Add model selection in UI
-- Implement rate limiting
-- Add message formatting (markdown support)
+This is a POC project. To extend:
 
-## Resources
+1. Create a new module directory
+2. Implement router with endpoints
+3. Register in main `app.py`
+4. Update Dockerfile
+5. Rebuild and test
 
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Ollama Documentation](https://ollama.ai/docs)
-- [WebSocket Protocol](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
+## 📄 License
+
+This is a proof-of-concept project for learning purposes.
+
+## 🙏 Acknowledgments
+
+- Ollama for local LLM inference
+- LangChain for RAG framework
+- FastAPI for modern Python web framework
+- All open-source contributors
+
+---
+
+**Version**: 2.0.0 - Modular Architecture  
+**Status**: ✅ Production Ready  
+**Port**: 8081 (single port for all services)  
+**Architecture**: Modular with Sub-Apps  
+**Date**: January 2026
