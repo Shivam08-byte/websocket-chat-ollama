@@ -9,20 +9,27 @@ All systems are operational and ready for use on any device.
 ## 📦 What's Been Built
 
 ### Core Application
+- **Clean modular architecture** - 79-line orchestrator (80% smaller!)
+- **Dual RAG systems** - Manual vs LangChain comparison
 - **Real-time chat interface** using WebSockets
-- **AI-powered responses** via Ollama LLM
+- **AI-powered responses** via Ollama LLM (Gemma 2B, Phi-3, Llama 3.2, Qwen 2.5)
+- **Document upload** - PDF, DOCX, TXT, Markdown support
+- **19 API endpoints** - All accessible through single port
 - **Multiple model support** with dynamic switching
 - **Dockerized deployment** for cross-platform compatibility
-- **Environment-based configuration** for easy customization
 
 ### Technology Stack
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| Backend | FastAPI + Python | WebSocket server & API endpoints |
-| Frontend | HTML/CSS/JavaScript | Chat interface |
-| AI Engine | Ollama | LLM model hosting |
-| Containerization | Docker + Docker Compose | Deployment |
+| Backend | FastAPI + Python | Modular WebSocket server with sub-apps |
+| Frontend | HTML/CSS/JavaScript | Chat interface with system toggle |
+| AI Engine | Ollama | LLM model hosting (gemma:2b, nomic-embed-text) |
+| RAG (Manual) | NumPy, JSON | Custom RAG implementation |
+| RAG (LangChain) | LangChain, FAISS | Framework-based RAG |
+| File Parsing | pypdf, python-docx | Document parsing |
+| Containerization | Docker + Docker Compose | Multi-container deployment |
 | Communication | WebSockets | Real-time messaging |
+| Architecture | Modular sub-apps | Clean separation of concerns |
 
 ---
 
@@ -30,32 +37,59 @@ All systems are operational and ready for use on any device.
 
 ```
 websockets/
-├── 📄 app.py                      # FastAPI backend with WebSocket & API endpoints
-├── 📄 requirements.txt            # Python dependencies (FastAPI, uvicorn, httpx)
-├── 📄 Dockerfile                  # FastAPI container configuration
-├── 📄 docker-compose.yml          # Orchestrates Ollama + FastAPI services
+├── 📄 app.py (79 lines)           # Clean orchestrator - 80% smaller!
+├── 📄 requirements.txt            # Python dependencies
+├── 📄 MODULAR_QUICK_REF.md        # Quick reference for modular architecture
 │
-├── 🔧 Configuration
-│   ├── .env                       # Your environment configuration
-│   ├── .env.example               # Template configuration file
-│   ├── .gitignore                 # Git ignore rules
-│   └── .dockerignore              # Docker build ignore rules
+├── 📁 common/                     # Shared services (716 lines total)
+│   ├── __init__.py
+│   ├── app.py                     # Health, models, system endpoints
+│   ├── file_parser.py             # Document parsing (PDF, DOCX, TXT)
+│   ├── query_service.py           # Query routing between RAG systems
+│   ├── websocket_handler.py       # WebSocket management
+│   └── unified_rag.py             # Unified endpoints for both systems
 │
-├── 📖 Documentation
-│   ├── README.md                  # Project overview & quick start
-│   ├── SETUP.md                   # Detailed setup guide for any device
-│   ├── MODEL_SELECTION.md         # Model selection feature documentation
-│   └── PROJECT_SUMMARY.md         # This file
+├── 📁 app_manual/                 # Manual RAG module
+│   ├── __init__.py
+│   ├── app.py                     # Manual RAG router & endpoints
+│   └── rag_store.py               # Custom RAG implementation
 │
-├── 🔨 Scripts
-│   ├── verify.sh                  # System verification script
-│   ├── pull-all-models.sh         # Download all models at once
-│   └── pull-model.sh              # Download single model
+├── 📁 app_langchain/              # LangChain RAG module
+│   ├── __init__.py
+│   ├── app.py                     # LangChain RAG router & endpoints
+│   └── langchain_rag.py           # LangChain implementation
 │
-└── 🎨 Frontend (static/)
-    ├── index.html                 # Chat interface HTML
-    ├── style.css                  # Modern responsive styling
-    └── script.js                  # WebSocket client & model selection logic
+├── 📁 builds/                     # Docker configuration
+│   ├── Dockerfile                 # FastAPI container
+│   ├── docker-compose.yml         # Multi-container orchestration
+│   ├── pull-model.sh              # Model pull script
+│   ├── pull-all-models.sh         # Pull all models
+│   └── verify.sh                  # System verification
+│
+├── 📁 docs/                       # Documentation
+│   ├── README.md                  # Overview
+│   ├── SETUP.md                   # Setup guide
+│   ├── MODULAR_ARCHITECTURE.md    # Architecture deep dive
+│   ├── CLEAN_ARCHITECTURE.md      # Refactoring details
+│   ├── CHAT_FLOW.md               # Communication flow
+│   ├── DUAL_SYSTEM_GUIDE.md       # Dual RAG comparison
+│   ├── MODEL_SELECTION.md         # Model information
+│   ├── QUICK_REFERENCE.md         # Quick commands
+│   ├── PROJECT_SUMMARY.md         # This file
+│   ├── future_scope.md            # Future enhancements
+│   ├── REQUEST_FLOW.md            # Request routing
+│   └── understand_rag_without_code.md
+│
+├── 📁 static/                     # Frontend
+│   ├── index.html                 # Chat interface
+│   ├── script.js                  # WebSocket client with system toggle
+│   ├── style.css                  # Styling
+│   └── test.html                  # Test page
+│
+└── 📁 data/ (gitignored)          # Runtime data
+    ├── rag_store.json             # Manual RAG storage
+    ├── uploads/                   # Uploaded files
+    └── vectorstore/               # LangChain FAISS vectors
 ```
 
 ---
@@ -63,11 +97,15 @@ websockets/
 ## 🎯 Features Implemented
 
 ### ✅ Core Features
+- [x] Clean modular architecture (79-line orchestrator)
+- [x] Dual RAG systems (Manual + LangChain)
+- [x] Document upload (PDF, DOCX, TXT, Markdown)
+- [x] 19 API endpoints with OpenAPI docs
 - [x] Real-time WebSocket communication
 - [x] FastAPI backend with async support
-- [x] Ollama integration for AI responses
+- [x] Ollama integration with multiple models
 - [x] Docker containerization
-- [x] Environment-based configuration
+- [x] System toggle (Manual/LangChain comparison)
 - [x] Health check endpoint
 - [x] Cross-platform support (Windows/macOS/Linux)
 

@@ -25,7 +25,9 @@ services:
         wait
 
   fastapi:
-    build: .
+    build:
+      context: ..
+      dockerfile: builds/Dockerfile
     container_name: fastapi_websocket
     ports:
       - "${FASTAPI_EXTERNAL_PORT:-8000}:${FASTAPI_PORT:-8000}"
@@ -49,10 +51,11 @@ services:
       - WATCHFILES_FORCE_POLLING=${WATCHFILES_FORCE_POLLING:-true}
     restart: unless-stopped
     volumes:
-      - ./data:/app/data
-      - ./app.py:/app/app.py
-      - ./rag_store.py:/app/rag_store.py
-      - ./static:/app/static
+      - ../data:/app/data
+      - ../app.py:/app/app.py
+      - ../app_manual:/app/app_manual
+      - ../app_langchain:/app/app_langchain
+      - ../static:/app/static
     command: uvicorn app:app --host ${FASTAPI_HOST:-0.0.0.0} --port ${FASTAPI_PORT:-8000} --reload
 
 volumes:

@@ -1,6 +1,13 @@
 # Complete Setup Guide - WebSocket Chat with Ollama
 
-This guide will help you set up the WebSocket Chat application on **any device** (Windows, macOS, Linux).
+## 🏗️ Architecture
+This is a **modular application** with:
+- Clean 79-line orchestrator (80% smaller than before!)
+- Dual RAG systems (Manual + LangChain)
+- 19 API endpoints accessible through single port
+- Document upload support (PDF, DOCX, TXT, Markdown)
+
+This guide will help you set up the application on **any device** (Windows, macOS, Linux).
 
 ## 📋 Prerequisites
 
@@ -88,16 +95,20 @@ OLLAMA_EXTERNAL_PORT=11434
 
 ### Step 3: Start the Application
 
-Run the following command in your terminal:
+Navigate to the builds directory first:
 
 **All Platforms:**
 ```bash
-docker-compose up -d --build
+cd builds/
+docker compose up -d --build
 ```
 
 **What happens:**
 1. Downloads Docker images (~2-3 minutes)
-2. Builds FastAPI container (~1 minute)
+2. Builds FastAPI container with modular architecture (~1 minute)
+3. Starts Ollama container
+4. Starts FastAPI container with all sub-apps
+5. Automatically pulls default model (gemma:2b + nomic-embed-text)
 3. Downloads default AI model (~2-5 minutes)
 4. Starts both services
 
