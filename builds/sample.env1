@@ -1,0 +1,12 @@
+# Application Configuration
+FASTAPI_HOST=0.0.0.0
+FASTAPI_PORT=8000
+
+# Ollama Configuration
+OLLAMA_HOST=http://ollama:11434
+OLLAMA_MODEL=gemma:2b
+OLLAMA_TIMEOUT=120
+
+# Docker Ports
+FASTAPI_EXTERNAL_PORT=8081
+OLLAMA_EXTERNAL_PORT=11434

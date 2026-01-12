@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent3 - Tree-of-Thought Demo</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Agent3: Tree-of-Thought Demo</h1>
+        <div id="chat-box" class="chat-box"></div>
+        <form id="chat-form">
+            <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" required />
+            <button type="submit">Send</button>
+        </form>
+        <button id="reset-btn">Reset Conversation</button>
+    </div>
+    <script>
+    const chatBox = document.getElementById('chat-box');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const resetBtn = document.getElementById('reset-btn');
+
+    function appendMessage(sender, text) {
+        const msg = document.createElement('div');
+        msg.className = sender;
+        msg.innerText = text;
+        chatBox.appendChild(msg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    chatForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (!message) return;
+        appendMessage('user', 'You: ' + message);
+        userInput.value = '';
+        appendMessage('agent', 'Agent3 is thinking...');
+        const res = await fetch('/api/agents/agent3/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        chatBox.lastChild.innerText = '...';
+        const data = await res.json();
+        if (data.success) {
+            appendMessage('agent', 'Agent3: ' + data.answer);
+            if (data.steps) {
+                appendMessage('steps', 'Steps: ' + JSON.stringify(data.steps, null, 2));
+            }
+        } else {
+            appendMessage('agent', 'Error: ' + data.error);
+        }
+    };
+
+    resetBtn.onclick = async () => {
+        await fetch('/api/agents/agent3/reset', { method: 'POST' });
+        chatBox.innerHTML = '';
+        appendMessage('system', 'Conversation reset.');
+    };
+    </script>
+</body>
+</html>

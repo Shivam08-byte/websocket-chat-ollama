@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent4 - Human-in-the-Loop Demo</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Agent4: Human-in-the-Loop Demo</h1>
+        <div id="chat-box" class="chat-box"></div>
+        <form id="chat-form">
+            <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" required />
+            <button type="submit">Send</button>
+        </form>
+        <button id="approve-btn" style="display:none;">Approve</button>
+        <button id="reject-btn" style="display:none;">Reject</button>
+        <button id="reset-btn">Reset Conversation</button>
+    </div>
+    <script>
+    const chatBox = document.getElementById('chat-box');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const approveBtn = document.getElementById('approve-btn');
+    const rejectBtn = document.getElementById('reject-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    let awaitingApproval = false;
+    let lastMessage = '';
+
+    function appendMessage(sender, text) {
+        const msg = document.createElement('div');
+        msg.className = sender;
+        msg.innerText = text;
+        chatBox.appendChild(msg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    chatForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (!message) return;
+        appendMessage('user', 'You: ' + message);
+        userInput.value = '';
+        appendMessage('agent', 'Agent4 is thinking...');
+        const res = await fetch('/api/agents/agent4/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        chatBox.lastChild.innerText = '...';
+        const data = await res.json();
+        if (data.success) {
+            appendMessage('agent', 'Agent4: ' + data.answer);
+            if (data.awaiting_approval) {
+                awaitingApproval = true;
+                lastMessage = message;
+                approveBtn.style.display = 'inline-block';
+                rejectBtn.style.display = 'inline-block';
+            } else {
+                approveBtn.style.display = 'none';
+                rejectBtn.style.display = 'none';
+            }
+            if (data.steps) {
+                appendMessage('steps', 'Steps: ' + JSON.stringify(data.steps, null, 2));
+            }
+        } else {
+            appendMessage('agent', 'Error: ' + data.error);
+        }
+    };
+
+    approveBtn.onclick = async () => {
+        if (!awaitingApproval) return;
+        appendMessage('system', 'You approved the answer.');
+        const res = await fetch('/api/agents/agent4/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: lastMessage, approve: true })
+        });
+        const data = await res.json();
+        if (data.success) {
+            appendMessage('agent', 'Agent4 (Final): ' + data.answer);
+        }
+        approveBtn.style.display = 'none';
+        rejectBtn.style.display = 'none';
+        awaitingApproval = false;
+    };
+
+    rejectBtn.onclick = async () => {
+        if (!awaitingApproval) return;
+        appendMessage('system', 'You rejected the answer.');
+        const res = await fetch('/api/agents/agent4/query', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: lastMessage, approve: false })
+        });
+        const data = await res.json();
+        if (data.success) {
+            appendMessage('agent', 'Agent4: ' + data.answer);
+        }
+        approveBtn.style.display = 'none';
+        rejectBtn.style.display = 'none';
+        awaitingApproval = false;
+    };
+
+    resetBtn.onclick = async () => {
+        await fetch('/api/agents/agent4/reset', { method: 'POST' });
+        chatBox.innerHTML = '';
+        appendMessage('system', 'Conversation reset.');
+        approveBtn.style.display = 'none';
+        rejectBtn.style.display = 'none';
+        awaitingApproval = false;
+    };
+    </script>
+</body>
+</html>
