@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent1 - ReAct Agent Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .nav {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            margin-right: 20px;
+            transition: color 0.3s;
+        }
+
+        .nav a:hover {
+            color: #764ba2;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            padding: 20px;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .sidebar h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .tool-list {
+            list-style: none;
+        }
+
+        .tool-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            font-size: 13px;
+        }
+
+        .tool-name {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .tool-desc {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 30px;
+            background: #fafafa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-user {
+            text-align: right;
+        }
+
+        .message-content {
+            display: inline-block;
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 15px;
+            word-wrap: break-word;
+        }
+
+        .message-user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message-agent .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+        }
+
+        .reasoning-steps {
+            margin-top: 15px;
+            background: #f0f4ff;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 13px;
+        }
+
+        .step {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #d0d9ff;
+        }
+
+        .step:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .step-thought {
+            color: #555;
+            margin-bottom: 6px;
+            font-style: italic;
+        }
+
+        .step-action {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .step-action strong {
+            color: #667eea;
+        }
+
+        .step-result {
+            background: #e8f5e9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .tools-used {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #667eea;
+        }
+
+        .input-area {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #userInput:focus {
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .reset-btn {
+            background: #f44336;
+            padding: 8px 20px;
+            font-size: 13px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 10px;
+        }
+
+        .example-queries {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .example-queries h4 {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .example-query {
+            display: inline-block;
+            background: #f0f4ff;
+            color: #667eea;
+            padding: 6px 12px;
+            border-radius: 15px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .example-query:hover {
+            background: #e0e9ff;
+        }
+
+        .info-badge {
+            display: inline-block;
+            background: #ff9800;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Agent1 - ReAct Agent <span class="info-badge">Learning Mode</span></h1>
+            <p>Simple AI Agent demonstrating function calling, tool use, reasoning, and planning</p>
+        </div>
+
+        <div class="nav">
+            <a href="/">← Back to Chat</a>
+            <a href="#" onclick="showInfo(); return false;">ℹ️ About Agent1</a>
+            <a href="#" onclick="loadTools(); return false;">🔧 View Tools</a>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>🛠️ Available Tools</h3>
+                <ul class="tool-list" id="toolList">
+                    <li class="tool-item">Loading tools...</li>
+                </ul>
+
+                <div class="example-queries">
+                    <h4>💡 Example Queries:</h4>
+                    <div class="example-query" onclick="useExample('What is 25 * 8 + 17?')">Math calculation</div>
+                    <div class="example-query" onclick="useExample('What time is it?')">Current time</div>
+                    <div class="example-query" onclick="useExample('What is the weather in Mumbai?')">Weather check</div>
+                    <div class="example-query" onclick="useExample('Tell me about Python')">Knowledge search</div>
+                    <div class="example-query" onclick="useExample('Calculate sqrt(144) and tell me the time')">Multi-step</div>
+                </div>
+            </div>
+
+            <div class="chat-section">
+                <div class="messages-container" id="messages">
+                    <div class="message message-agent">
+                        <div class="message-content">
+                            <strong>👋 Welcome to Agent1!</strong><br><br>
+                            I'm a simple ReAct agent that can use tools to help you. Try asking me to:
+                            <ul style="margin-top: 10px; margin-left: 20px;">
+                                <li>Perform calculations</li>
+                                <li>Get current time</li>
+                                <li>Check weather (mock data)</li>
+                                <li>Search knowledge base</li>
+                            </ul>
+                            <br>
+                            <em>I'll show you my reasoning steps and which tools I use! 🔍</em>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <div class="input-row">
+                        <input 
+                            type="text" 
+                            id="userInput" 
+                            placeholder="Ask me anything... (e.g., 'What is 25 * 8?')"
+                            onkeypress="if(event.key === 'Enter') sendMessage()"
+                        >
+                        <button onclick="sendMessage()" id="sendBtn">Send</button>
+                        <button onclick="resetHistory()" class="reset-btn">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLoading = false;
+
+        // Load tools on page load
+        window.onload = function() {
+            loadTools();
+        };
+
+        async function loadTools() {
+            try {
+                const response = await fetch('/api/agents/agent1/tools');
+                const data = await response.json();
+                
+                const toolList = document.getElementById('toolList');
+                toolList.innerHTML = '';
+                
+                data.tools.forEach(tool => {
+                    const li = document.createElement('li');
+                    li.className = 'tool-item';
+                    li.innerHTML = `
+                        <div class="tool-name">${tool.name}</div>
+                        <div class="tool-desc">${tool.description}</div>
+                    `;
+                    toolList.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error loading tools:', error);
+            }
+        }
+
+        async function sendMessage() {
+            if (isLoading) return;
+            
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Show loading
+            isLoading = true;
+            document.getElementById('sendBtn').disabled = true;
+            addLoadingMessage();
+            
+            try {
+                const response = await fetch('/api/agents/agent1/query', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                
+                // Remove loading
+                removeLoadingMessage();
+                
+                if (data.success) {
+                    addAgentResponse(data.answer, data.steps, data.tools_used);
+                } else {
+                    addMessage(`Error: ${data.error}`, 'agent');
+                }
+            } catch (error) {
+                removeLoadingMessage();
+                addMessage(`Error: ${error.message}`, 'agent');
+            } finally {
+                isLoading = false;
+                document.getElementById('sendBtn').disabled = false;
+            }
+        }
+
+        function addMessage(text, sender) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${sender}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = text;
+            
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addAgentResponse(answer, steps, toolsUsed) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-agent';
+            
+            let html = `<div class="message-content">
+                <strong>Answer:</strong><br>${answer}`;
+            
+            // Add reasoning steps
+            if (steps && steps.length > 0) {
+                html += `<div class="reasoning-steps">
+                    <strong>🧠 Reasoning Steps:</strong>`;
+                
+                steps.forEach((step, index) => {
+                    html += `<div class="step">
+                        <strong>Step ${index + 1}:</strong>`;
+                    
+                    if (step.thought) {
+                        html += `<div class="step-thought">💭 ${step.thought}</div>`;
+                    }
+                    
+                    if (step.tool) {
+                        html += `<div class="step-action">
+                            <strong>🔧 Tool:</strong> ${step.tool}<br>
+                            <strong>Input:</strong> ${JSON.stringify(step.input)}
+                        </div>`;
+                        
+                        if (step.result) {
+                            const resultObj = JSON.parse(step.result);
+                            html += `<div class="step-result">
+                                <strong>Result:</strong> ${resultObj.message || JSON.stringify(resultObj)}
+                            </div>`;
+                        }
+                    }
+                    
+                    html += `</div>`;
+                });
+                
+                html += `</div>`;
+            }
+            
+            // Add tools used
+            if (toolsUsed && toolsUsed.length > 0) {
+                html += `<div class="tools-used">
+                    🛠️ Tools used: ${toolsUsed.join(', ')}
+                </div>`;
+            }
+            
+            html += `</div>`;
+            messageDiv.innerHTML = html;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addLoadingMessage() {
+            const messagesDiv = document.getElementById('messages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading-msg';
+            loadingDiv.className = 'loading';
+            loadingDiv.textContent = '🤔 Agent is thinking and using tools...';
+            messagesDiv.appendChild(loadingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function removeLoadingMessage() {
+            const loadingMsg = document.getElementById('loading-msg');
+            if (loadingMsg) {
+                loadingMsg.remove();
+            }
+        }
+
+        async function resetHistory() {
+            if (!confirm('Reset conversation history?')) return;
+            
+            try {
+                const response = await fetch('/api/agents/agent1/reset', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('messages').innerHTML = `
+                        <div class="message message-agent">
+                            <div class="message-content">
+                                <strong>✅ Conversation history reset!</strong><br>
+                                Ask me anything to start fresh.
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                alert('Error resetting history: ' + error.message);
+            }
+        }
+
+        function useExample(query) {
+            document.getElementById('userInput').value = query;
+        }
+
+        async function showInfo() {
+            try {
+                const response = await fetch('/api/agents/agent1/info');
+                const data = await response.json();
+                
+                alert(`Agent1 Information:\n\n` +
+                    `Name: ${data.name}\n` +
+                    `Description: ${data.description}\n` +
+                    `Model: ${data.model}\n\n` +
+                    `Capabilities:\n${data.capabilities.map(c => '• ' + c).join('\n')}\n\n` +
+                    `Available Tools: ${data.tools.length}\n` +
+                    `Max Iterations: ${data.max_iterations}`
+                );
+            } catch (error) {
+                alert('Error loading info: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

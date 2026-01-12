@@ -11,6 +11,7 @@ COPY ../app.py .
 COPY ../common/ ./common/
 COPY ../app_manual/ ./app_manual/
 COPY ../app_langchain/ ./app_langchain/
+COPY ../app_agents/ ./app_agents/
 COPY ../static/ ./static/
 
 # Expose port (can be overridden by environment variable)

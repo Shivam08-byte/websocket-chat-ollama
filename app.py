@@ -16,6 +16,7 @@ from common.websocket_handler import ConnectionManager, WebSocketHandler
 from common.query_service import QueryService
 from app_manual.app import router as manual_router, get_rag_store
 from app_langchain.app import router as langchain_router, get_langchain_rag
+from app_agents.app import router as agents_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -34,8 +35,9 @@ app.include_router(common_router)           # Health, models, system switching
 app.include_router(unified_rag_router)      # Unified RAG endpoints
 app.include_router(manual_router)           # Manual RAG endpoints
 app.include_router(langchain_router)        # LangChain RAG endpoints
+app.include_router(agents_router)           # AI Agents endpoints
 
-logging.info("[Server] Registered routers: common, unified_rag, manual, langchain")
+logging.info("[Server] Registered routers: common, unified_rag, manual, langchain, agents")
 
 # Get configuration
 FASTAPI_HOST = os.getenv("FASTAPI_HOST", "0.0.0.0")
@@ -61,6 +63,14 @@ websocket_handler = WebSocketHandler(connection_manager, query_service)
 async def serve_frontend():
     """Serve the main HTML page"""
     with open("static/index.html", "r") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
+
+
+@app.get("/agents/agent1")
+async def serve_agent1():
+    """Serve Agent1 demo page"""
+    with open("static/agent1.html", "r") as f:
         html_content = f.read()
     return HTMLResponse(content=html_content)
 

@@ -6,9 +6,10 @@ A production-ready, modular chat application with dual RAG (Retrieval-Augmented 
 
 - 🏗️ **Modular Architecture**: Scalable sub-app design with clear separation of concerns
 - 🔄 **Dual RAG Systems**: Compare Manual vs LangChain implementations side-by-side
+- 🤖 **AI Agents**: ReAct agent with function calling, tool use, and reasoning (NEW!)
 - 🤖 **Multiple AI Models**: Gemma 2B, Phi-3, Llama 3.2, Qwen 2.5
 - 📁 **Document Upload**: PDF, DOCX, TXT, Markdown support
-- 🔌 **Single Port**: All 19 endpoints accessible through one port (8081)
+- 🔌 **Single Port**: All endpoints accessible through one port (8081)
 - 🐳 **Fully Dockerized**: Complete containerized setup with Docker Compose
 - ⚡ **Real-time Communication**: WebSocket-based chat for instant messaging
 - 📊 **OpenAPI Documentation**: Auto-generated API docs at `/docs`
@@ -22,6 +23,7 @@ app.py (Main Server/Orchestrator)
 ├── common/          → Shared APIs (health, models, system switching)
 ├── app_manual/      → Manual RAG implementation
 ├── app_langchain/   → LangChain RAG implementation
+├── app_agents/      → AI Agent system with ReAct pattern (NEW!)
 └── static/          → Frontend (HTML/JS/CSS)
 ```
 
@@ -55,7 +57,13 @@ websockets/
 │   ├── __init__.py
 │   ├── app.py                       # LangChain RAG router
 │   └── langchain_rag.py             # LangChain implementation
+│app_agents/                      # AI Agent module (NEW!)
+│   ├── __init__.py
+│   ├── app.py                       # Agent API router
+│   ├── agent1.py                    # ReAct agent implementation
+│   └── tools.py                     # Tool definitions (calculator, time, weather, etc.)
 │
+├── 
 ├── builds/                          # Docker configuration
 │   ├── Dockerfile                   # FastAPI container
 │   ├── docker-compose.yml           # Multi-container orchestration
@@ -65,17 +73,19 @@ websockets/
 │
 ├── data/                            # Data directory (gitignored)
 │   ├── rag_store.json              # Manual RAG storage
-│   ├── uploads/                    # Uploaded files
-│   └── vectorstore/                # LangChain FAISS vectors
-│
-├── docs/                            # Documentation
-│   ├── README.md                   # Project overview
-│   ├── SETUP.md                    # Detailed setup guide
+│   ├── AGENT1_GUIDE.md             # AI Agent learning guide (NEW!)
 │   ├── MODULAR_ARCHITECTURE.md     # Architecture deep dive
 │   ├── CHAT_FLOW.md                # Communication flow
 │   ├── DUAL_SYSTEM_GUIDE.md        # Dual RAG comparison
 │   ├── MODEL_SELECTION.md          # Model information
 │   ├── QUICK_REFERENCE.md          # Quick commands
+│   ├── PROJECT_SUMMARY.md          # Project summary
+│   ├── future_scope.md             # Future enhancements
+│   └── understand_rag_without_code.md  # RAG explanation
+│
+└── static/                          # Frontend assets
+    ├── index.html                  # Chat interface
+    ├── agent1.html                 # Agent1 demo UI (NEW!)
 │   ├── PROJECT_SUMMARY.md          # Project summary
 │   ├── future_scope.md             # Future enhancements
 │   └── understand_rag_without_code.md  # RAG explanation
@@ -116,6 +126,7 @@ docker exec ollama ollama list
 
 ### 4. Access application
 - **Frontend**: http://localhost:8081
+- **Agent1 UI**: http://localhost:8081/agents/agent1 (NEW!)
 - **API Docs**: http://localhost:8081/docs
 - **Health Check**: http://localhost:8081/health
 
@@ -149,11 +160,20 @@ POST /api/rag/langchain/query    - Direct query
 ### Unified Endpoints
 ```
 GET  /                           - Main HTML page
+GET  /agents/agent1              - Agent1 demo UI (NEW!)
 WS   /ws                         - WebSocket chat
 GET  /api/rag/stats              - Aggregated stats
 POST /api/rag/ingest_file        - Upload to both systems
 POST /api/rag/ingest_text        - Ingest to both systems
 POST /api/rag/preview            - Preview context
+```
+
+### Agent Endpoints (NEW!)
+```
+GET  /api/agents/agent1/info     - Agent metadata & capabilities
+GET  /api/agents/agent1/tools    - List available tools
+POST /api/agents/agent1/query    - Query agent with message
+POST /api/agents/agent1/reset    - Reset conversation history
 ```
 
 ## 🧪 Testing
