@@ -1,0 +1,10 @@
+<!DOCTYPE html><html><body><h1>Test RAG Upload</h1><input type="file" id="f"><button onclick="test()">Upload</button><pre id="out"></pre><script>
+async function test(){
+  const fd=new FormData();
+  fd.append("file",document.getElementById("f").files[0]);
+  const r=await fetch("/api/rag/ingest_file",{method:"POST",body:fd});
+  const j=await r.json();
+  document.getElementById("out").textContent=JSON.stringify(j,null,2);
+  console.log("Result:",j);
+}
+</script></body></html>

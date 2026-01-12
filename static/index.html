@@ -24,6 +24,8 @@
             </div>
         </header>
         
+        <!-- RAG panel removed; replaced by inline attach UX in the input bar -->
+        
         <div class="chat-container" id="chatContainer">
             <div class="messages" id="messages">
                 <!-- Messages will be appended here -->
@@ -31,6 +33,12 @@
         </div>
         
         <div class="input-container">
+            <label id="attachButton" for="filePicker" class="icon-button" title="Attach a document for this chat">＋</label>
+            <input id="filePicker" type="file" accept=".txt,.md,.markdown,.pdf,.docx" class="visually-hidden" />
+            <div id="activeSourceChip" class="chip" style="display:none">
+                <span class="chip-text" id="activeSourceText"></span>
+                <button class="chip-close" id="clearSourceBtn" title="Remove attachment">×</button>
+            </div>
             <input 
                 type="text" 
                 id="messageInput" 
