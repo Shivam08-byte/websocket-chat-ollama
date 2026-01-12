@@ -9,6 +9,7 @@ from typing import List
 from fastapi import UploadFile, File
 
 from rag_store import RAGStore
+from app_langchain.langchain_rag import LangChainRAGSystem
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +35,9 @@ RAG_UPLOAD_DIR = os.getenv("RAG_UPLOAD_DIR", "/app/data/uploads")
 
 # Current active model (can be changed via API)
 current_model = OLLAMA_MODEL
+
+# System selection: "manual" or "langchain"
+current_system = "manual"  # Default to manual implementation
 
 # Available models with descriptions
 AVAILABLE_MODELS = {
@@ -76,12 +80,28 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# Initialize RAG store
+# Initialize both RAG systems
 rag_store = RAGStore(ollama_host=OLLAMA_HOST, embed_model=OLLAMA_EMBED_MODEL, store_path=RAG_STORE_PATH)
+langchain_rag = LangChainRAGSystem(
+    ollama_host=OLLAMA_HOST,
+    ollama_model=current_model,
+    embed_model=OLLAMA_EMBED_MODEL,
+    chunk_size=800,
+    chunk_overlap=200
+)
 
 
-async def query_ollama(prompt: str, sources: list | None = None) -> str:
-    """Query Ollama API and return response"""
+async def query_ollama(prompt: str, sources: list | None = None, use_langchain: bool = False) -> str:
+    """Query Ollama API and return response - supports both manual and LangChain systems"""
+    
+    # Route to LangChain system if requested
+    if use_langchain:
+        if sources and RAG_ENABLED:
+            return await langchain_rag.query_with_rag(prompt, sources=sources, top_k=RAG_TOP_K)
+        else:
+            return await langchain_rag.query_without_rag(prompt)
+    
+    # Original manual implementation
     try:
         # Base system prompt
         system_prompt = "You are a helpful AI assistant. Provide clear, concise, and accurate responses. Prefer factual, sourced answers when context is provided."
@@ -179,12 +199,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 message_data = json.loads(data)
                 user_message = message_data.get("message", "")
                 sources = message_data.get("sources")
+                use_langchain = message_data.get("useLangchain", False)  # Get system preference
+                
                 if isinstance(sources, list):
                     # Coerce to strings
                     sources = [str(s) for s in sources if isinstance(s, (str, bytes))]
                 else:
                     sources = None
-                logging.info("WS message received | sources=%s | text_preview=%s", sources, user_message[:80])
+                
+                system_type = "LangChain" if use_langchain else "Manual"
+                logging.info("WS message received | system=%s | sources=%s | text_preview=%s", 
+                           system_type, sources, user_message[:80])
                 
                 if not user_message.strip():
                     continue
@@ -202,13 +227,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 await manager.send_message(
                     json.dumps({
                         "type": "typing",
-                        "message": "AI is typing..."
+                        "message": f"AI is typing... ({system_type} system)"
                     }),
                     websocket
                 )
                 
-                # Get AI response
-                ai_response = await query_ollama(user_message, sources=sources)
+                # Get AI response with selected system
+                ai_response = await query_ollama(user_message, sources=sources, use_langchain=use_langchain)
                 
                 # Send AI response
                 await manager.send_message(
@@ -301,7 +326,43 @@ async def load_model(model_data: dict):
 
 @app.get("/api/rag/stats")
 async def rag_stats():
-    return {"enabled": RAG_ENABLED, **rag_store.stats()}
+    """Get stats from both RAG systems"""
+    manual_stats = {"enabled": RAG_ENABLED, **rag_store.stats()}
+    langchain_stats = langchain_rag.stats()
+    
+    return {
+        "manual": manual_stats,
+        "langchain": langchain_stats,
+        "current_system": current_system
+    }
+
+
+@app.post("/api/system/switch")
+async def switch_system(payload: dict):
+    """Switch between manual and langchain systems"""
+    global current_system
+    system = payload.get("system", "manual")
+    
+    if system not in ["manual", "langchain"]:
+        return {"success": False, "message": "Invalid system. Choose 'manual' or 'langchain'"}
+    
+    current_system = system
+    logging.info(f"Switched to {system} system")
+    
+    return {
+        "success": True,
+        "current_system": current_system,
+        "message": f"Switched to {system} system"
+    }
+
+
+@app.get("/api/system/current")
+async def get_current_system():
+    """Get the currently active system"""
+    return {
+        "current_system": current_system,
+        "available_systems": ["manual", "langchain"]
+    }
 
 
 @app.post("/api/rag/ingest_text")
@@ -370,11 +431,22 @@ async def rag_ingest_file(file: UploadFile = File(...)):
                 logging.warning("Text/Markdown contained no extractable text: %s", filename)
                 return {"success": False, "message": "No text extracted from file. Please upload a non-empty text file."}
 
-        added = await rag_store.add_text(text, source=filename)
-        logging.info("Indexed upload | filename=%s | added_chunks=%s", filename, added)
-        if added <= 0:
+        # Index in BOTH systems for comparison
+        added_manual = await rag_store.add_text(text, source=filename)
+        added_langchain = langchain_rag.add_documents(text, source=filename)
+        
+        logging.info("Indexed upload | filename=%s | manual_chunks=%s | langchain_chunks=%s", 
+                    filename, added_manual, added_langchain)
+        
+        if added_manual <= 0 and added_langchain <= 0:
             return {"success": False, "message": "No chunks indexed (file may be empty or unsupported)."}
-        return {"success": True, "added_chunks": added, "source": filename}
+        
+        return {
+            "success": True, 
+            "added_chunks": added_manual,
+            "added_chunks_langchain": added_langchain,
+            "source": filename
+        }
     except Exception as e:
         logging.exception("Ingest file failed: %s", e)
         return {"success": False, "message": str(e)}

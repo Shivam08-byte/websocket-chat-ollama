@@ -11,6 +11,11 @@ const statusIndicator = document.querySelector('.status-indicator');
 const statusText = document.querySelector('.status-text');
 const modelSelect = document.getElementById('modelSelect');
 
+// System toggle
+const systemToggle = document.getElementById('systemToggle');
+const toggleText = document.getElementById('toggleText');
+let useLangchain = false;  // false = Manual, true = LangChain
+
 // Attach UX and per-chat RAG state
 const attachButton = document.getElementById('attachButton');
 const filePicker = document.getElementById('filePicker');
@@ -156,13 +161,23 @@ function scrollToBottom() {
 function sendMessage() {
     const message = messageInput.value.trim();
     if (!message || !ws || ws.readyState !== WebSocket.OPEN) return;
-    const payload = { message };
+    const payload = { message, useLangchain };  // Include system preference
     if (activeRagSource) payload.sources = [activeRagSource];
     console.log('[DEBUG] Sending WebSocket payload:', JSON.stringify(payload));
     console.log('[DEBUG] activeRagSource:', activeRagSource);
+    console.log('[DEBUG] useLangchain:', useLangchain);
     ws.send(JSON.stringify(payload));
     messageInput.value = '';
     messageInput.focus();
+}
+
+// System toggle handler
+function handleSystemToggle() {
+    useLangchain = systemToggle.checked;
+    toggleText.textContent = useLangchain ? 'LangChain' : 'Manual';
+    toggleText.style.color = useLangchain ? '#10b981' : '#667eea';
+    console.log('[SYSTEM] Switched to:', useLangchain ? 'LangChain' : 'Manual');
+    addMessage(`🔄 Switched to ${useLangchain ? 'LangChain' : 'Manual'} system`, 'system');
 }
 
 // Event listeners
@@ -170,6 +185,7 @@ sendButton.addEventListener('click', sendMessage);
 messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendMessage();
 });
+systemToggle.addEventListener('change', handleSystemToggle);
 
 // Initialize when page loads (handle scripts at end of body)
 function initApp() {
