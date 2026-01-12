@@ -3,9 +3,21 @@
 ## 🏗️ Architecture
 This is a **modular application** with:
 - Clean 79-line orchestrator (80% smaller than before!)
+- Service layer architecture (file_parser, query_service, websocket_handler, unified_rag)
 - Dual RAG systems (Manual + LangChain)
-- 19 API endpoints accessible through single port
+- AI Agent system with ReAct pattern (Agent1)
+- 23 API endpoints accessible through single port
 - Document upload support (PDF, DOCX, TXT, Markdown)
+
+**Module Structure:**
+```
+app.py → Orchestrator
+├── common/          → Shared services (6 modules)
+├── app_manual/      → Manual RAG endpoints (4 endpoints)
+├── app_langchain/   → LangChain RAG endpoints (4 endpoints)
+├── app_agents/      → AI Agent system (4 endpoints)
+└── builds/          → Docker configuration
+```
 
 This guide will help you set up the application on **any device** (Windows, macOS, Linux).
 
@@ -133,8 +145,20 @@ curl http://localhost:8081/health
 ### Step 5: Access the Chat
 
 Open your browser and navigate to:
+
+**Main Chat Interface:**
 ```
 http://localhost:8081
+```
+
+**Agent1 Demo (AI Agent with Tools):**
+```
+http://localhost:8081/agents/agent1
+```
+
+**API Documentation:**
+```
+http://localhost:8081/docs
 ```
 
 You should see the chat interface with a model selector dropdown!
@@ -143,9 +167,29 @@ You should see the chat interface with a model selector dropdown!
 
 ## 🎯 Using the Application
 
-### Chatting with AI
+### Main Chat Interface (RAG System)
 1. Type your message in the input box
 2. Press Enter or click "Send"
+3. Wait for AI response (usually 2-10 seconds)
+4. Upload documents (PDF, DOCX, TXT, MD) for RAG context
+
+### Agent1 Interface (AI Agent with Tools)
+Access at: http://localhost:8081/agents/agent1
+
+**Features:**
+- ReAct pattern (Reasoning + Acting)
+- 4 functional tools: Calculator, Time, Weather, Knowledge Search
+- See reasoning steps in real-time
+- Example queries provided in UI
+
+**Try these queries:**
+- "What is 25 * 8 + 17?"
+- "What time is it?"
+- "What's the weather in Mumbai?"
+- "Tell me about Python"
+
+### Switching RAG Systems
+Toggle between Manual and LangChain implementations in the UI.
 3. Wait for AI response (usually 2-10 seconds)
 
 ### Switching Models
