@@ -52,6 +52,7 @@ services:
       - ./data:/app/data
       - ./app.py:/app/app.py
       - ./rag_store.py:/app/rag_store.py
+      - ./app_langchain:/app/app_langchain
       - ./static:/app/static
     command: uvicorn app:app --host ${FASTAPI_HOST:-0.0.0.0} --port ${FASTAPI_PORT:-8000} --reload
 
