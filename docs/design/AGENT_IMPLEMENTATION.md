@@ -34,7 +34,7 @@
    - Responsive design with gradient theme
 
 ### Documentation
-6. **docs/AGENT1_GUIDE.md** (300+ lines) - Comprehensive learning guide:
+6. **docs/guides/AGENT1_GUIDE.md** (300+ lines) - Comprehensive learning guide:
    - What is ReAct pattern
    - Function calling concepts
    - Tool schemas and execution

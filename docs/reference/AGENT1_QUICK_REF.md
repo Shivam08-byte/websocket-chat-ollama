@@ -21,7 +21,7 @@ Perfect for learning AI agents and interview preparation!
 | **List Tools** | GET /api/agents/agent1/tools |
 | **Send Query** | POST /api/agents/agent1/query |
 | **Reset History** | POST /api/agents/agent1/reset |
-| **Documentation** | [AGENT1_GUIDE.md](./AGENT1_GUIDE.md) |
+| **Documentation** | [AGENT1_GUIDE.md](../guides/AGENT1_GUIDE.md) |
 
 ---
 
@@ -240,10 +240,10 @@ app_agents/
 
 ## 📚 Learning Resources
 
-- **Full Guide**: [docs/AGENT1_GUIDE.md](./docs/AGENT1_GUIDE.md)
-- **Implementation**: [AGENT_IMPLEMENTATION.md](./AGENT_IMPLEMENTATION.md)
-- **Architecture**: [docs/MODULAR_ARCHITECTURE.md](./docs/MODULAR_ARCHITECTURE.md)
-- **Main README**: [README.md](./README.md)
+- **Full Guide**: [AGENT1_GUIDE.md](../guides/AGENT1_GUIDE.md)
+- **Implementation**: [AGENT_IMPLEMENTATION.md](../design/AGENT_IMPLEMENTATION.md)
+- **Architecture**: [MODULAR_ARCHITECTURE.md](../architecture/MODULAR_ARCHITECTURE.md)
+- **Main README**: [README.md](../../README.md)
 
 ---
 

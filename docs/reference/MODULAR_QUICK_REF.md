@@ -23,8 +23,8 @@ websockets/
 │   ├── Dockerfile           # Updated for modular structure
 │   └── docker-compose.yml
 ├── docs/
-│   ├── MODULAR_ARCHITECTURE.md  # Full documentation
-│   └── CLEAN_ARCHITECTURE.md    # Refactoring details
+│   ├── architecture/MODULAR_ARCHITECTURE.md  # Full documentation
+│   └── architecture/CLEAN_ARCHITECTURE.md    # Refactoring details
 └── static/
     ├── index.html
     ├── script.js
@@ -90,7 +90,7 @@ docker compose logs --tail=50     # Last 50 lines
 curl http://localhost:8081/health
 
 # All endpoints list
-curl -s http://localhost:8081/openapi.json | python3 -c "import sys, json; data = json.load(sys.stdin); print('\\n'.join([f'{method.upper()} {path}' for path, methods in data['paths'].items() for method in methods.keys()]))"
+curl -s http://localhost:8081/openapi.json | python3 -c "import sys, json; data = json.load(sys.stdin); print('\n'.join([f'{method.upper()} {path}' for path, methods in data['paths'].items() for method in methods.keys()]))"
 
 # Manual RAG stats
 curl http://localhost:8081/api/rag/manual/stats
@@ -198,38 +198,3 @@ All modules use the same environment variables from `docker-compose.yml`:
 - `OLLAMA_EMBED_MODEL`
 - `RAG_ENABLED`
 - `RAG_TOP_K`
-- `RAG_MAX_CHARS`
-- `RAG_STORE_PATH`
-- `RAG_UPLOAD_DIR`
-
-## Status Check
-
-```bash
-# Container status
-cd builds/ && docker compose ps
-
-# Health check
-curl -s http://localhost:8081/health | python3 -m json.tool
-
-# All endpoints
-curl -s http://localhost:8081/openapi.json | python3 -c "import sys, json; data = json.load(sys.stdin); print(f\"Total endpoints: {len(data['paths'])}\")"
-
-# Frontend
-curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/
-```
-
-## Migration Notes
-
-**No Breaking Changes!**
-- ✅ Frontend works without modifications
-- ✅ WebSocket behavior unchanged
-- ✅ Legacy endpoints maintained
-- ✅ File uploads index in both systems
-- ✅ All existing functionality preserved
-
----
-
-**Version:** 2.1.0 - Clean Modular Architecture  
-**Date:** January 2026  
-**Status:** ✅ Production Ready  
-**Refactoring:** app.py reduced from 411 → 79 lines (80% smaller!)
