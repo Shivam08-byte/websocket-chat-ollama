@@ -6,33 +6,42 @@ import os
 import io
 import logging
 from fastapi import APIRouter, UploadFile, File
+from common.config import load_config
 
 from .langchain_rag import LangChainRAGSystem
 
 # Create router for LangChain RAG endpoints
 router = APIRouter(prefix="/api/rag/langchain", tags=["langchain-rag"])
 
-# Get configuration from environment variables
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma:2b")
-OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
-RAG_ENABLED = os.getenv("RAG_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
-RAG_TOP_K = int(os.getenv("RAG_TOP_K", "4"))
-RAG_SAVE_UPLOADS = os.getenv("RAG_SAVE_UPLOADS", "true").lower() in {"1", "true", "yes", "on"}
-RAG_UPLOAD_DIR = os.getenv("RAG_UPLOAD_DIR", "/app/data/uploads")
+# Get configuration from file and environment variables
+_cfg = load_config("langchain")
+
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", str(_cfg.get("ollama_host", "http://localhost:11434")))
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", str(_cfg.get("ollama_model", "gemma:2b")))
+OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", str(_cfg.get("embed_model", "nomic-embed-text")))
+
+RAG_VECTORSTORE = os.getenv("RAG_VECTORSTORE", str(_cfg.get("vectorstore", "faiss"))).lower()
+RAG_VECTORSTORE_PATH = os.getenv("RAG_VECTORSTORE_PATH", str(_cfg.get("vectorstore_path", "/app/data/chroma_db")))
+
+RAG_ENABLED = os.getenv("RAG_ENABLED", str(_cfg.get("rag_enabled", True))).lower() in {"1", "true", "yes", "on"}
+RAG_TOP_K = int(os.getenv("RAG_TOP_K", str(_cfg.get("rag_top_k", 4))))
+RAG_SAVE_UPLOADS = os.getenv("RAG_SAVE_UPLOADS", str(_cfg.get("save_uploads", True))).lower() in {"1", "true", "yes", "on"}
+RAG_UPLOAD_DIR = os.getenv("RAG_UPLOAD_DIR", str(_cfg.get("upload_dir", "/app/data/uploads")))
 
 # Initialize LangChain RAG system
 langchain_rag = LangChainRAGSystem(
     ollama_host=OLLAMA_HOST,
     ollama_model=OLLAMA_MODEL,
     embed_model=OLLAMA_EMBED_MODEL,
-    chunk_size=800,
-    chunk_overlap=200
+    chunk_size=int(_cfg.get("chunk_size", 800)),
+    chunk_overlap=int(_cfg.get("chunk_overlap", 200)),
+    vectorstore_path=RAG_VECTORSTORE_PATH,
+    vectorstore_type=RAG_VECTORSTORE,
 )
 
 logging.basicConfig(level=logging.INFO)
-logging.info("[LangChain RAG] Initialized with model=%s, embed_model=%s", 
-             OLLAMA_MODEL, OLLAMA_EMBED_MODEL)
+logging.info("[LangChain RAG] Initialized with model=%s, embed_model=%s, vectorstore=%s", 
+             OLLAMA_MODEL, OLLAMA_EMBED_MODEL, RAG_VECTORSTORE)
 
 
 @router.get("/stats")

@@ -11,7 +11,7 @@ from pathlib import Path
 from langchain_community.llms import Ollama
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS, Chroma
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from langchain.schema import Document
@@ -27,7 +27,8 @@ class LangChainRAGSystem:
         embed_model: str = "nomic-embed-text",
         chunk_size: int = 800,
         chunk_overlap: int = 200,
-        vectorstore_path: str = "/app/data/langchain_vectorstore"
+        vectorstore_path: str = "/app/data/langchain_vectorstore",
+        vectorstore_type: str = "faiss",
     ):
         self.ollama_host = ollama_host
         self.ollama_model = ollama_model
@@ -35,6 +36,7 @@ class LangChainRAGSystem:
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.vectorstore_path = vectorstore_path
+        self.vectorstore_type = (vectorstore_type or "faiss").lower()
         
         # Initialize LLM
         self.llm = Ollama(
@@ -59,10 +61,20 @@ class LangChainRAGSystem:
         )
         
         # Vector store (lazy loaded)
-        self.vectorstore: Optional[FAISS] = None
+        self.vectorstore: Optional[Any] = None
         self.source_docs: Dict[str, List[Document]] = {}  # Track docs by source
         
         logging.info(f"[LangChain] Initialized with model={ollama_model}, embed={embed_model}")
+
+        # If using Chroma, attempt to load existing persisted store
+        if self.vectorstore_type == "chroma":
+            try:
+                p = Path(self.vectorstore_path)
+                if p.exists():
+                    self.vectorstore = Chroma(persist_directory=self.vectorstore_path, embedding_function=self.embeddings)
+                    logging.info(f"[LangChain] Loaded existing Chroma vectorstore at {self.vectorstore_path}")
+            except Exception:
+                self.vectorstore = None
     
     def add_documents(self, text: str, source: str) -> int:
         """
@@ -98,12 +110,32 @@ class LangChainRAGSystem:
             
             # Add to vector store
             if self.vectorstore is None:
-                # Create new vector store
-                self.vectorstore = FAISS.from_documents(documents, self.embeddings)
-                logging.info(f"[LangChain] Created new FAISS vectorstore with {len(documents)} docs from {source}")
+                if self.vectorstore_type == "chroma":
+                    # Create persistent Chroma store
+                    self.vectorstore = Chroma.from_documents(
+                        documents,
+                        self.embeddings,
+                        persist_directory=self.vectorstore_path,
+                    )
+                    # Ensure persistence after creation
+                    try:
+                        self.vectorstore.persist()
+                    except Exception:
+                        pass
+                    logging.info(f"[LangChain] Created new Chroma vectorstore at {self.vectorstore_path} with {len(documents)} docs from {source}")
+                else:
+                    # Default to FAISS
+                    self.vectorstore = FAISS.from_documents(documents, self.embeddings)
+                    logging.info(f"[LangChain] Created new FAISS vectorstore with {len(documents)} docs from {source}")
             else:
                 # Add to existing vector store
                 self.vectorstore.add_documents(documents)
+                # Persist for Chroma
+                if self.vectorstore_type == "chroma":
+                    try:
+                        self.vectorstore.persist()
+                    except Exception:
+                        pass
                 logging.info(f"[LangChain] Added {len(documents)} docs from {source} to existing vectorstore")
             
             return len(documents)
@@ -140,6 +172,7 @@ class LangChainRAGSystem:
                     return f"No documents found for sources: {sources}"
                 
                 # Create a temporary vectorstore with only relevant docs
+                # Using FAISS for temp store is fine even if primary is Chroma.
                 temp_vectorstore = FAISS.from_documents(relevant_docs, self.embeddings)
                 retriever = temp_vectorstore.as_retriever(search_kwargs={"k": top_k})
                 logging.info(f"[LangChain] Filtering by sources: {sources}, docs: {len(relevant_docs)}")
@@ -243,7 +276,14 @@ Assistant:"""
                 all_docs = []
                 for docs in self.source_docs.values():
                     all_docs.extend(docs)
-                self.vectorstore = FAISS.from_documents(all_docs, self.embeddings)
+                if self.vectorstore_type == "chroma":
+                    self.vectorstore = Chroma.from_documents(all_docs, self.embeddings, persist_directory=self.vectorstore_path)
+                    try:
+                        self.vectorstore.persist()
+                    except Exception:
+                        pass
+                else:
+                    self.vectorstore = FAISS.from_documents(all_docs, self.embeddings)
             else:
                 self.vectorstore = None
             logging.info(f"[LangChain] Cleared source: {source}")

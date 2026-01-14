@@ -1,0 +1,21 @@
+# Config for LangChain-based RAG sub-app
+
+ollama_host: "http://localhost:11434"
+ollama_model: "gemma:2b"
+embed_model: "nomic-embed-text"
+
+# Vector store selection: faiss | chroma
+vectorstore: "faiss"
+
+# Persistence path (used by Chroma)
+vectorstore_path: "/app/data/chroma_db"
+
+# Chunking params
+chunk_size: 800
+chunk_overlap: 200
+
+# RAG settings
+rag_enabled: true
+rag_top_k: 4
+save_uploads: true
+upload_dir: "/app/data/uploads"

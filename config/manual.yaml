@@ -1,0 +1,9 @@
+# Config for Manual RAG sub-app
+
+backend: "manual-json"  # manual-json | manual-chroma
+store_path: "/app/data/rag_store.json"
+embed_model: "nomic-embed-text"
+rag_enabled: true
+rag_top_k: 4
+save_uploads: true
+upload_dir: "/app/data/uploads"
