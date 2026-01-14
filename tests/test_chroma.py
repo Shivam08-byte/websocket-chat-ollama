@@ -10,8 +10,10 @@ Usage:
 
 import argparse
 import json
+import os
 import sys
 import time
+from pathlib import Path
 from typing import Dict, Any, Optional
 import requests
 
@@ -137,6 +139,78 @@ class VectorStoreTest:
         except Exception as e:
             print_error(f"Query failed: {e}")
             return None
+
+
+def _read_env_port() -> Optional[int]:
+    """Try to read FASTAPI port from environment or .env file."""
+    # Check environment variables first
+    for name in ("FASTAPI_EXTERNAL_PORT", "FASTAPI_PORT"):
+        val = os.getenv(name)
+        if val:
+            try:
+                return int(str(val).strip())
+            except Exception:
+                pass
+
+    # Fallback: parse project .env
+    try:
+        root = Path(__file__).resolve().parents[1]
+        env_paths = [
+            root / ".env",
+            Path.cwd() / ".env",
+            root / "builds" / ".env",
+        ]
+        for env_path in env_paths:
+            if not env_path.exists():
+                continue
+            for line in env_path.read_text(encoding="utf-8").splitlines():
+                s = line.strip()
+                if s.startswith("FASTAPI_EXTERNAL_PORT") and "=" in s:
+                    try:
+                        return int(s.split("=", 1)[1].strip().strip('"').strip("'"))
+                    except Exception:
+                        pass
+                if s.startswith("FASTAPI_PORT") and "=" in s:
+                    try:
+                        return int(s.split("=", 1)[1].strip().strip('"').strip("'"))
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+    return None
+
+
+def _probe_ports(session: requests.Session, timeout: int) -> Optional[int]:
+    """Probe common ports to auto-detect service if not specified."""
+    for port in (8000, 8081, 8080, 8001, 9000):
+        try:
+            resp = session.get(f"http://localhost:{port}/health", timeout=min(timeout, 5))
+            if resp.status_code == 200:
+                return port
+        except Exception:
+            continue
+    return None
+
+
+def _detect_base_url(arg_base_url: str, timeout: int) -> str:
+    """Determine base URL: use CLI arg, else env/.env, else probe."""
+    # If user provided a non-default base URL, use it
+    if arg_base_url and arg_base_url != "http://localhost:8000":
+        return arg_base_url.rstrip('/')
+
+    # Env or .env
+    env_port = _read_env_port()
+    if env_port:
+        return f"http://localhost:{env_port}"
+
+    # Probe common ports
+    session = requests.Session()
+    probed = _probe_ports(session, timeout)
+    if probed:
+        return f"http://localhost:{probed}"
+
+    # Fallback to default
+    return arg_base_url.rstrip('/')
 
 
 def test_baseline_faiss(tester: VectorStoreTest) -> bool:
@@ -329,8 +403,8 @@ Examples:
     )
     parser.add_argument(
         '--base-url',
-        default='http://localhost:8000',
-        help='Base URL of the FastAPI service (default: http://localhost:8000)'
+        default='http://localhost:8081',
+        help='Base URL of the FastAPI service (auto-detects if not provided)'
     )
     parser.add_argument(
         '--timeout',
@@ -347,11 +421,12 @@ Examples:
     args = parser.parse_args()
     
     print_header("ChromaDB Vector Store Test Suite")
-    print_info(f"Target: {args.base_url}")
+    base_url = _detect_base_url(args.base_url, args.timeout)
+    print_info(f"Target: {base_url}")
     print_info(f"Timeout: {args.timeout}s")
     print("")
     
-    tester = VectorStoreTest(args.base_url, args.timeout)
+    tester = VectorStoreTest(base_url, args.timeout)
     
     # Run tests
     results = []
