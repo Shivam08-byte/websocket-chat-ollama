@@ -17,7 +17,8 @@ RAG_ENABLED = os.getenv("RAG_ENABLED", "true").lower() in {"1", "true", "yes", "
 RAG_TOP_K = int(os.getenv("RAG_TOP_K", "4"))
 RAG_MAX_CHARS = int(os.getenv("RAG_MAX_CHARS", "2000"))
 RAG_SAVE_UPLOADS = os.getenv("RAG_SAVE_UPLOADS", "true").lower() in {"1", "true", "yes", "on"}
-RAG_UPLOAD_DIR = os.getenv("RAG_UPLOAD_DIR", "/app/data/uploads")
+_BASE_DATA_DIR = os.getenv("DATA_CONTAINER_DIR", "/app/data")
+RAG_UPLOAD_DIR = os.getenv("RAG_UPLOAD_DIR", os.path.join(_BASE_DATA_DIR, "uploads"))
 
 logging.basicConfig(level=logging.INFO)
 

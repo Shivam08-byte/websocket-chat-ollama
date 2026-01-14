@@ -21,12 +21,19 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", str(_cfg.get("ollama_model", "gemma:2b"
 OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", str(_cfg.get("embed_model", "nomic-embed-text")))
 
 RAG_VECTORSTORE = os.getenv("RAG_VECTORSTORE", str(_cfg.get("vectorstore", "faiss"))).lower()
-RAG_VECTORSTORE_PATH = os.getenv("RAG_VECTORSTORE_PATH", str(_cfg.get("vectorstore_path", "/app/data/chroma_db")))
+_BASE_DATA_DIR = os.getenv("DATA_CONTAINER_DIR", "/app/data")
+RAG_VECTORSTORE_PATH = os.getenv(
+    "RAG_VECTORSTORE_PATH",
+    str(_cfg.get("vectorstore_path", os.path.join(_BASE_DATA_DIR, "chroma_db")))
+)
 
 RAG_ENABLED = os.getenv("RAG_ENABLED", str(_cfg.get("rag_enabled", True))).lower() in {"1", "true", "yes", "on"}
 RAG_TOP_K = int(os.getenv("RAG_TOP_K", str(_cfg.get("rag_top_k", 4))))
 RAG_SAVE_UPLOADS = os.getenv("RAG_SAVE_UPLOADS", str(_cfg.get("save_uploads", True))).lower() in {"1", "true", "yes", "on"}
-RAG_UPLOAD_DIR = os.getenv("RAG_UPLOAD_DIR", str(_cfg.get("upload_dir", "/app/data/uploads")))
+RAG_UPLOAD_DIR = os.getenv(
+    "RAG_UPLOAD_DIR",
+    str(_cfg.get("upload_dir", os.path.join(_BASE_DATA_DIR, "uploads")))
+)
 
 # Initialize LangChain RAG system
 langchain_rag = LangChainRAGSystem(

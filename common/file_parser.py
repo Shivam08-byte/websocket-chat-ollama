@@ -89,7 +89,7 @@ def _parse_text(content: bytes, filename: str) -> Tuple[bool, str, str]:
         return False, "", f"Text parse error: {str(e)}"
 
 
-def save_upload(content: bytes, filename: str, upload_dir: str = "/app/data/uploads") -> bool:
+def save_upload(content: bytes, filename: str, upload_dir: str = None) -> bool:
     """
     Save uploaded file to disk
     
@@ -102,6 +102,9 @@ def save_upload(content: bytes, filename: str, upload_dir: str = "/app/data/uplo
         True if saved successfully, False otherwise
     """
     try:
+        if not upload_dir:
+            base_dir = os.getenv("DATA_CONTAINER_DIR", "/app/data")
+            upload_dir = os.getenv("RAG_UPLOAD_DIR", os.path.join(base_dir, "uploads"))
         os.makedirs(upload_dir, exist_ok=True)
         save_path = os.path.join(upload_dir, filename)
         with open(save_path, 'wb') as f:

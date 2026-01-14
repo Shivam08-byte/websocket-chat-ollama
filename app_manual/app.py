@@ -13,14 +13,15 @@ from .rag_store import RAGStore
 router = APIRouter(prefix="/api/rag/manual", tags=["manual-rag"])
 
 # Get configuration from environment variables
+BASE_DATA_DIR = os.getenv("DATA_CONTAINER_DIR", "/app/data")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
-RAG_STORE_PATH = os.getenv("RAG_STORE_PATH", "/app/data/rag_store.json")
+RAG_STORE_PATH = os.getenv("RAG_STORE_PATH", os.path.join(BASE_DATA_DIR, "rag_store.json"))
 RAG_ENABLED = os.getenv("RAG_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
 RAG_TOP_K = int(os.getenv("RAG_TOP_K", "4"))
 RAG_MAX_CHARS = int(os.getenv("RAG_MAX_CHARS", "2000"))
 RAG_SAVE_UPLOADS = os.getenv("RAG_SAVE_UPLOADS", "true").lower() in {"1", "true", "yes", "on"}
-RAG_UPLOAD_DIR = os.getenv("RAG_UPLOAD_DIR", "/app/data/uploads")
+RAG_UPLOAD_DIR = os.getenv("RAG_UPLOAD_DIR", os.path.join(BASE_DATA_DIR, "uploads"))
 
 # Initialize Manual RAG system
 rag_store = RAGStore(

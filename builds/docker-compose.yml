@@ -51,7 +51,7 @@ services:
       - WATCHFILES_FORCE_POLLING=${WATCHFILES_FORCE_POLLING:-true}
     restart: unless-stopped
     volumes:
-      - ../data:/app/data
+      - ${DATA_HOST_DIR:-../data}:${DATA_CONTAINER_DIR:-/app/data}
       - ../app.py:/app/app.py
       - ../app_manual:/app/app_manual
       - ../app_langchain:/app/app_langchain

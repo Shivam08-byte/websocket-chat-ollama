@@ -27,7 +27,7 @@ class LangChainRAGSystem:
         embed_model: str = "nomic-embed-text",
         chunk_size: int = 800,
         chunk_overlap: int = 200,
-        vectorstore_path: str = "/app/data/langchain_vectorstore",
+        vectorstore_path: Optional[str] = None,
         vectorstore_type: str = "faiss",
     ):
         self.ollama_host = ollama_host
@@ -35,7 +35,12 @@ class LangChainRAGSystem:
         self.embed_model = embed_model
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
-        self.vectorstore_path = vectorstore_path
+        # Default vectorstore path derived from DATA_CONTAINER_DIR when not provided
+        base_dir = os.getenv("DATA_CONTAINER_DIR", "/app/data")
+        if vectorstore_path is None and (vectorstore_type or "faiss").lower() == "chroma":
+            self.vectorstore_path = os.path.join(base_dir, "chroma_db")
+        else:
+            self.vectorstore_path = vectorstore_path or os.path.join(base_dir, "langchain_vectorstore")
         self.vectorstore_type = (vectorstore_type or "faiss").lower()
         
         # Initialize LLM
