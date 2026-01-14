@@ -142,6 +142,30 @@ Test the health endpoint:
 curl http://localhost:8081/health
 ```
 
+### Step 4.1: Enable ChromaDB Vector Store (Optional)
+
+By default, the LangChain RAG uses FAISS (in-memory). To enable persistent storage with ChromaDB:
+
+1) Set environment variables in your project `.env`:
+```bash
+echo 'RAG_VECTORSTORE=chroma' >> .env
+echo 'RAG_VECTORSTORE_PATH=/app/data/chroma_db' >> .env
+```
+
+2) Rebuild and restart the FastAPI container:
+```bash
+cd builds
+docker compose up -d --build
+```
+
+Notes:
+- Data persists under `../data/chroma_db` on your host (mapped to `/app/data/chroma_db` in the container).
+- Switch back to FAISS any time:
+```bash
+sed -i.bak '' 's/RAG_VECTORSTORE=chroma/RAG_VECTORSTORE=faiss/' ../.env || true
+cd builds && docker compose up -d --build
+```
+
 ### Step 5: Access the Chat
 
 Open your browser and navigate to:
@@ -245,6 +269,9 @@ docker exec ollama ollama pull gemma:2b
 - Check if containers are running: `docker ps`
 - View logs: `docker logs fastapi_websocket`
 - Restart: `docker-compose restart`
+
+### Issue 4.1: Using a Different Port
+If your app runs on another port (e.g., 8081), ensure your tools/tests point to the correct port. Our test suite auto-detects from `.env`, but you can also pass `--base-url`.
 
 ### Issue 5: WebSocket Connection Error
 **Solution:** 

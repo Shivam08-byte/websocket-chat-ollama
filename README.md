@@ -6,6 +6,7 @@ A production-ready, modular chat application with dual RAG (Retrieval-Augmented 
 
 - 🏗️ **Modular Architecture**: Scalable sub-app design with clear separation of concerns
 - 🔄 **Dual RAG Systems**: Compare Manual vs LangChain implementations side-by-side
+- 🧠 **ChromaDB Support**: Persistent vector store option alongside FAISS
 - 🤖 **AI Agents**: ReAct agent with function calling, tool use, and reasoning (NEW!)
 - 🤖 **Multiple AI Models**: Gemma 2B, Phi-3, Llama 3.2, Qwen 2.5
 - 📁 **Document Upload**: PDF, DOCX, TXT, Markdown support
@@ -130,6 +131,14 @@ docker exec ollama ollama list
 - **API Docs**: http://localhost:8081/docs
 - **Health Check**: http://localhost:8081/health
 
+### Enable ChromaDB (Optional)
+```bash
+# in project root
+echo 'RAG_VECTORSTORE=chroma' >> .env
+echo 'RAG_VECTORSTORE_PATH=/app/data/chroma_db' >> .env
+cd builds && docker compose up -d --build
+```
+
 ## 📡 API Endpoints (19 Total)
 
 ### Common Endpoints
@@ -156,6 +165,10 @@ POST /api/rag/langchain/ingest_text - Ingest text
 POST /api/rag/langchain/ingest_file - Ingest file
 POST /api/rag/langchain/query    - Direct query
 ```
+
+Chroma vs FAISS (LangChain):
+- Set `RAG_VECTORSTORE=faiss|chroma` (env overrides YAML config)
+- For Chroma, set `RAG_VECTORSTORE_PATH=/app/data/chroma_db` (mapped to `data/` on host)
 
 ### Unified Endpoints
 ```
@@ -205,6 +218,34 @@ curl http://localhost:8081/api/rag/manual/stats | python3 -m json.tool
 curl http://localhost:8081/api/rag/langchain/stats | python3 -m json.tool
 ```
 
+## ⚙️ Configuration
+
+- Config files live in [config/langchain.yaml](config/langchain.yaml) and [config/manual.yaml](config/manual.yaml).
+- At runtime, settings are loaded from YAML and merged with environment variables via [common/config.py](common/config.py).
+- Precedence: environment variables override YAML, which override code defaults.
+- To make YAML configs available inside the FastAPI container, add this volume to the `fastapi` service in [builds/docker-compose.yml](builds/docker-compose.yml):
+    - `../config:/app/config`
+
+Key settings (LangChain):
+- `vectorstore`: `faiss` or `chroma` (default `faiss`)
+- `vectorstore_path`: persistent path for Chroma (e.g., `/app/data/chroma_db`)
+- `chunk_size`, `chunk_overlap`: text chunking for embeddings
+- `rag_enabled`, `rag_top_k`, `save_uploads`, `upload_dir`
+
+Switching vector stores:
+- Set `RAG_VECTORSTORE=faiss|chroma` in `.env` (env takes priority over YAML).
+- For Chroma, also set `RAG_VECTORSTORE_PATH=/app/data/chroma_db`.
+
+### ChromaDB Test Suite
+Run the comprehensive test (auto-detects port, defaults to 8081):
+```bash
+python tests/test_chroma.py
+```
+Flags:
+- `--base-url http://localhost:8081` to override target
+- `--timeout 60` to extend request timeout
+- `--skip-persistence` to skip the manual restart step
+
 ## 🔧 Development
 
 ### Rebuild after changes
@@ -231,13 +272,13 @@ docker compose down
 
 | Document | Description |
 |----------|-------------|
-| [MODULAR_ARCHITECTURE.md](docs/MODULAR_ARCHITECTURE.md) | Deep dive into modular design |
+| [MODULAR_ARCHITECTURE.md](docs/architecture/MODULAR_ARCHITECTURE.md) | Deep dive into modular design |
 | [MODULAR_QUICK_REF.md](MODULAR_QUICK_REF.md) | Quick reference card |
-| [SETUP.md](docs/SETUP.md) | Detailed setup instructions |
-| [CHAT_FLOW.md](docs/CHAT_FLOW.md) | WebSocket communication flow |
-| [DUAL_SYSTEM_GUIDE.md](docs/DUAL_SYSTEM_GUIDE.md) | Manual vs LangChain comparison |
-| [MODEL_SELECTION.md](docs/MODEL_SELECTION.md) | Model information and selection |
-| [future_scope.md](docs/future_scope.md) | Planned features and enhancements |
+| [SETUP.md](docs/setup/SETUP.md) | Detailed setup instructions |
+| [CHAT_FLOW.md](docs/flows/CHAT_FLOW.md) | WebSocket communication flow |
+| [DUAL_SYSTEM_GUIDE.md](docs/guides/DUAL_SYSTEM_GUIDE.md) | Manual vs LangChain comparison |
+| [MODEL_SELECTION.md](docs/reference/MODEL_SELECTION.md) | Model information and selection |
+| [future_scope.md](docs/roadmap/future_scope.md) | Planned features and enhancements |
 
 ## 🎯 Adding a New Module
 
@@ -293,7 +334,7 @@ curl http://localhost:8081/api/rag/chromadb/stats
 - **AI**: Ollama (Gemma 2B, Phi-3, Llama 3.2, Qwen 2.5)
 - **Embeddings**: nomic-embed-text
 - **RAG (Manual)**: NumPy, custom cosine similarity
-- **RAG (LangChain)**: LangChain, FAISS, RecursiveCharacterTextSplitter
+- **RAG (LangChain)**: LangChain, FAISS/Chroma, RecursiveCharacterTextSplitter
 - **File Parsing**: pypdf (PDF), python-docx (DOCX)
 - **Containerization**: Docker, Docker Compose
 - **Frontend**: Vanilla JavaScript, WebSocket API
